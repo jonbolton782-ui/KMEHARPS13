@@ -1,0 +1,2110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Orrs Hill Weather Station — Tablet</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#071018;
+  --card:#0b2a33;
+  --muted:#9fb6c2;
+  --accent:#1fb6b6;
+  --accent-2:#ffd166;
+  --text:#e6f7f7;
+  --danger:#ff6b6b;
+  --glass: rgba(255,255,255,0.03);
+  --temp-accent:#39a0ff;
+  --now-accent:#ff8c42;
+  --base-temp-size:96px;
+}
+
+/* Page / container */
+html,body{
+  height:100%;
+  margin:0;
+  background:linear-gradient(180deg,var(--bg),#04202a);
+  color:var(--text);
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+  font-size:14px;
+}
+
+.topGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.gridCard {
+  background: rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 10px;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardIcon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardLabel {
+  margin-top: 6px;
+  font-size: 1.1rem;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Ensure all SVGs scale consistently */
+.gridCard svg {
+  width: 64px;
+  height: 64px;
+}
+
+
+.pressureCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.pressureGauge {
+  width: 80px;
+  height: 80px;
+}
+
+.pressureRing {
+  fill: none;
+  stroke: rgba(255,255,255,0.25);
+  stroke-width: 6;
+}
+
+.pressureValue {
+  position: absolute;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: white;
+}
+
+.pressureTrend {
+  position: absolute;
+  margin-top: 48px;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+
+
+.sunCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.sunIcon {
+  font-size: 2rem;
+  margin-bottom: 4px;
+}
+
+.sunTime {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.sunLabel {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.sunIconSvg {
+  width: 48px;
+  height: 48px;
+  display: block;
+}
+
+.humidityIconSvg {
+  width: 48px;
+  height: 48px;
+  display: block;
+}
+
+#humidityDroplet {
+  filter: drop-shadow(0 0 4px rgba(0, 100, 255, 0.4));
+}
+
+
+
+
+/* Group top row + sparkline so sparkline width = top row width */
+.topBlock{
+  display: grid;
+  grid-template-columns: max-content; /* column width = intrinsic width of topRowLimiter */
+  grid-auto-rows: auto;
+  align-items: start;
+  box-sizing: border-box;
+}
+
+/* Ensure left column aligns to start so topBlock controls sparkline width */
+.leftContentWrap{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start; /* keep children left-aligned */
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+}
+
+/* Sparkline fills the topBlock width (not the whole left column) */
+.sparkFull{
+  width:100%;
+  box-sizing:border-box;
+}
+
+
+.container{
+  max-width:1200px;
+  margin:14px auto;
+  padding:12px;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+}
+.card{
+  background:linear-gradient(180deg,var(--card),#06282f);
+  border-radius:12px;
+  padding:12px;
+  box-shadow:0 8px 28px rgba(0,0,0,0.45);
+  color:var(--text);
+  box-sizing:border-box;
+}
+
+/* Top band: stable two-column layout using grid */
+.topBand{
+  display:grid;
+  grid-template-columns: minmax(0, 1fr) 260px; /* left grows, right fixed by column */
+  gap:12px;
+  align-items:start;
+  box-sizing:border-box;
+}
+
+/* Left column */
+.leftBandRow{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  min-width:0; /* critical so children can shrink */
+  box-sizing:border-box;
+}
+
+/* Left content: fill the left grid column */
+.leftContentWrap{
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+}
+
+/* Top row limiter (wraps the topRowItems only) */
+.topRowLimiter{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  justify-content:flex-start;
+  min-width:0;
+  box-sizing:border-box;
+}
+
+/* Top row inside left block: four items in a row */
+.topRowItems{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  justify-content:flex-start;
+  flex-wrap:nowrap;
+  min-width:0;
+  flex:0 1 auto;
+  width:auto;
+  box-sizing:border-box;
+}
+
+/* Make each direct child of the top row shrinkable (prevents immovable blocks) */
+.topRowItems > *{
+  min-width:0;
+  flex-shrink:1;
+  box-sizing:border-box;
+}
+
+/* Specific children that historically forced width — make them flexible */
+.miniCard{
+  background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(0,0,0,0.02));
+  padding:10px;
+  border-radius:10px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  min-width:84px;
+  flex-shrink:1;
+  border:1px solid rgba(255,255,255,0.03);
+  box-sizing:border-box;
+}
+.miniLabel{color:var(--muted);font-size:12px}
+.miniVal{font-weight:800;font-size:18px}
+
+/* Temp stack and value — allow the temp block to shrink if necessary */
+.tempWrap{min-width:0;box-sizing:border-box}
+.tempStack{display:flex;flex-direction:column;align-items:center;min-width:0}
+.tempValue{
+  font-family:Roboto,"Helvetica Neue",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  font-weight:300;
+  font-size:96px;
+  line-height:96px;
+  color:var(--temp-accent);
+  letter-spacing:-0.01em;
+  display:inline-flex;
+  align-items:flex-start;
+  min-width:0;
+  flex-shrink:1;
+  box-sizing:border-box;
+}
+.tempValue #airTempNum{display:inline-block;line-height:1}
+.tempValue .tempUnit{
+  display:inline-block;
+  font-size:0.45em;
+  margin-left:6px;
+  transform:translateY(0);
+  line-height:1;
+  color:inherit;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+.tempMeta{display:flex;flex-direction:column;gap:4px}
+.summary{color:var(--muted);font-size:14px}
+.feels{color:var(--muted);font-size:13px}
+.feelsLikeUnder{font-size:1.8rem;opacity:0.75;margin-top:0.25rem;line-height:1.2}
+
+/* Sparkline: always fill the left column */
+.sparkFull{
+  width:100%;
+  box-sizing:border-box;
+  justify-self: stretch;
+}
+.sparkWrap{
+  width:100%;
+  height:56px;
+  border-radius:8px;
+  background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.005));
+  display:flex;
+  align-items:center;
+  padding:6px;
+  box-sizing:border-box;
+}
+#tempSpark{width:100%;height:44px;display:block}
+
+/* Right column: fill its grid column */
+.rightBand{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  box-sizing:border-box;
+}
+
+/* Make the 2x2 grid fill the rightBand vertically */
+.topGrid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  grid-template-rows:repeat(2,1fr);
+  gap:12px;
+  width:100%;
+  height:100%;
+  align-items:stretch;
+  justify-items:stretch;
+  box-sizing:border-box;
+}
+
+/* Wind / compass */
+.windWrap .miniCard{
+  background:none !important;
+  border:none !important;
+  box-shadow:none !important;
+}
+.compassWrap{width:150px;height:150px;position:relative;display:flex;align-items:center;justify-content:center}
+.compassSvg{width:150px;height:150px}
+.needle{stroke:rgba(255,255,255,0.95);stroke-width:2.2;stroke-linecap:round}
+
+/* Rain gauge */
+#rainGauge{
+  width:56px;
+  height:140px;
+  border-radius:8px;
+  position:relative;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  box-shadow:inset 0 2px 8px rgba(0,0,0,0.45);
+  border:1px solid rgba(255,255,255,0.04);
+  box-sizing:border-box;
+}
+#gaugeFill{
+  position:absolute;
+  left:6px;
+  right:6px;
+  bottom:6px;
+  border-top-left-radius:6px;
+  border-top-right-radius:6px;
+  background:linear-gradient(180deg,#4fc3f7,#0288d1);
+  height:0%;
+}
+
+/* Data list / cards */
+.dataList{display:flex;flex-direction:column;gap:8px}
+.dataItem{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(0,0,0,0.02));border:1px solid rgba(255,255,255,0.03);box-sizing:border-box}
+.label{color:var(--muted);font-size:12px}
+.val{font-weight:700;font-size:16px;display:flex;align-items:center;gap:8px}
+.trendIcon{width:20px;text-align:center;font-size:14px;color:var(--muted)}
+.dataItem.compact{padding:8px}
+.dataItem.compact .val{display:flex;gap:10px;align-items:center;font-weight:700}
+.smallTime{font-size:13px;color:var(--muted)}
+
+/* Tides / forecast */
+.tideRow{display:flex;gap:12px;align-items:flex-start}
+#tideCanvas{width:100%;height:260px;border-radius:8px;background:linear-gradient(180deg,#06282f,#04202a);display:block}
+.oceanStack{width:220px;display:flex;flex-direction:column;gap:10px}
+.stackBox{padding:10px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(0,0,0,0.02));border:1px solid rgba(255,255,255,0.03);box-sizing:border-box}
+.forecastRow{display:flex;gap:10px;overflow-x:auto;padding-top:6px}
+.fcard{min-width:110px;padding:10px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(0,0,0,0.02));border:1px solid rgba(255,255,255,0.03);text-align:center;box-sizing:border-box}
+
+.mutedTiny{color:var(--muted);font-size:11px}
+.nowBadge{background:var(--now-accent);color:#071018;padding:4px 8px;border-radius:12px;font-weight:700;font-size:12px}
+
+/* Responsive tweaks */
+@media (max-width:900px) and (min-width:700px){
+  .tempValue{font-size:72px;line-height:72px}
+  .sparkWrap{height:44px}
+  #tempSpark{height:34px}
+  #tideCanvas{height:200px}
+
+  /* keep the right column consistent at this breakpoint */
+  .topBand{ grid-template-columns: minmax(0, 1fr) 260px; }
+
+  .windWrap,.rainWrap{flex:0 0 100px}
+  .compassWrap{width:92px;height:92px}
+  .miniCard{min-width:92px;padding:8px}
+  .conditionWrap{flex:0 0 84px}
+  #conditionIconSvg{width:56px;height:56px}
+}
+
+@media (max-width:700px){
+  .tempValue{font-size:60px;line-height:60px}
+  .sparkWrap{height:36px}
+  #tempSpark{height:28px}
+  #tideCanvas{height:170px}
+
+  /* narrower right column on smaller screens */
+  .topBand{ grid-template-columns: minmax(0, 1fr) 220px; }
+
+  .windWrap,.rainWrap{flex:0 0 88px}
+  .tempWrap{min-width:180px}
+  .compassWrap{width:80px;height:80px}
+  .miniCard{min-width:84px;padding:8px}
+  .conditionWrap{flex:0 0 72px}
+  #conditionIconSvg{width:48px;height:48px}
+}
+
+@media (max-width:520px){
+  /* stack vertically on very small screens */
+  .topBand{ grid-template-columns: 1fr; }
+  .topRowItems{flex-wrap:wrap}
+  .rightBand{width:100%}
+}
+
+.top
+</style>
+
+
+</head>
+<body>
+
+  <!-- Inline SVG sprite for condition icons -->
+<!-- Unified Weather Icon Set (Hybrid: filled clouds, stroked details) -->
+<!-- Unified Weather Icon Set (Hybrid: filled clouds, stroked details) -->
+
+<!-- CLEAR -->
+<svg aria-hidden="true" style="display:none">
+<symbol id="icon-clear-day" viewBox="0 0 24 24">
+  <circle cx="12" cy="12" r="5" fill="#ffd166"/>
+</symbol>
+
+<symbol id="icon-clear-night" viewBox="0 0 24 24">
+  <path d="M15 5a5.5 5.5 0 1 0 4 9.5A6.5 6.5 0 0 1 15 5z"
+        fill="#b0c4de"/>
+</symbol>
+
+<!-- FEW CLOUDS -->
+<symbol id="icon-few-clouds-day" viewBox="0 0 24 24">
+  <circle cx="7" cy="8" r="3" fill="#ffd166"/>
+  <path d="M6 17a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 17H6z"
+        fill="#cfd8dc"/>
+</symbol>
+
+<symbol id="icon-few-clouds-night" viewBox="0 0 24 24">
+  <path d="M9 6a4.5 4.5 0 1 0 4 7.5A5.5 5.5 0 0 1 9 6z"
+        fill="#b0c4de"/>
+  <path d="M6 18a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 18H6z"
+        fill="#cfd8dc"/>
+</symbol>
+
+<!-- CLOUDS -->
+<symbol id="icon-scattered-clouds" viewBox="0 0 24 24">
+  <path d="M5 17a4.5 4.5 0 0 1 0-9 5.5 5.5 0 0 1 10.5 2A4 4 0 0 1 17 17H5z"
+        fill="#cfd8dc"/>
+</symbol>
+
+<symbol id="icon-broken-clouds" viewBox="0 0 24 24">
+  <path d="M4 17a4 4 0 0 1 0-8 5 5 0 0 1 9.5 1.8A3.5 3.5 0 0 1 16 17H4z"
+        fill="#cfd8dc"/>
+  <path d="M10 11a3.5 3.5 0 0 1 6.8 1.3A2.8 2.8 0 0 1 19 15h-4"
+        fill="#cfd8dc"/>
+</symbol>
+
+<symbol id="icon-overcast" viewBox="0 0 24 24">
+  <path d="M4 17a4 4 0 0 1 0-8 5 5 0 0 1 9.5 1.8A3.5 3.5 0 0 1 16 17H4z"
+        fill="#cfd8dc"/>
+  <path d="M7 20a3.5 3.5 0 0 1 0-7 4.5 4.5 0 0 1 8.5 1.6A3 3 0 0 1 18 20H7z"
+        fill="#cfd8dc"/>
+</symbol>
+
+<!-- DRIZZLE -->
+<symbol id="icon-drizzle" viewBox="0 0 24 24">
+  <path d="M7 15a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 15H7z"
+        fill="#cfd8dc"/>
+  <g fill="#4fc3f7">
+    <circle cx="9" cy="19" r="0.9"/>
+    <circle cx="13" cy="19" r="0.9"/>
+  </g>
+</symbol>
+
+<!-- LIGHT RAIN -->
+<symbol id="icon-light-rain" viewBox="0 0 24 24">
+  <!-- Cloud -->
+  <path d="M7 16a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 16H7z" fill="#cfd8dc"/>
+
+  <!-- Two clear raindrops -->
+  <path d="M9 18 v3" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M14 18 v3" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round" fill="none"/>
+</symbol>
+
+
+
+
+
+<!-- RAIN -->
+<symbol id="icon-rain" viewBox="0 0 24 24">
+  <path d="M7 15a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 15H7z"
+        fill="#cfd8dc"/>
+  <g fill="#4fc3f7">
+    <path d="M9 17c0 1-.8 2-1.5 2S6 18 6 17s.8-2 1.5-2 1.5 1 1.5 2z"/>
+    <path d="M14 17c0 1-.8 2-1.5 2s-1.5-1-1.5-2 .8-2 1.5-2 1.5 1 1.5 2z"/>
+    <path d="M19 17c0 1-.8 2-1.5 2s-1.5-1-1.5-2 .8-2 1.5-2 1.5 1 1.5 2z"/>
+  </g>
+</symbol>
+
+<!-- HEAVY RAIN -->
+<symbol id="icon-heavy-rain" viewBox="0 0 24 24">
+  <path d="M7 14.5a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 14.5H7z"
+        fill="#cfd8dc"/>
+  <g fill="none" stroke="#4fc3f7" stroke-width="1.6" stroke-linecap="round">
+    <path d="M8 16l-1 3"/>
+    <path d="M12 16l-1 3"/>
+    <path d="M16 16l-1 3"/>
+  </g>
+</symbol>
+
+<!-- SHOWER RAIN -->
+<symbol id="icon-shower-rain" viewBox="0 0 24 24">
+  <path d="M7 14.5a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 14.5H7z"
+        fill="#cfd8dc"/>
+  <g fill="none" stroke="#4fc3f7" stroke-width="1.6" stroke-linecap="round">
+    <path d="M8 16.5l-1 3"/>
+    <path d="M11 17.5l-1 3"/>
+    <path d="M14 16.5l-1 3"/>
+    <path d="M17 17.5l-1 3"/>
+  </g>
+</symbol>
+
+<!-- SLEET -->
+<symbol id="icon-sleet" viewBox="0 0 24 24">
+  <path d="M7 14.5a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 14.5H7z"
+        fill="#cfd8dc"/>
+  <circle cx="9" cy="18.5" r="0.9" fill="#4fc3f7"/>
+  <circle cx="13" cy="18.5" r="0.9" fill="#e0f7fa"/>
+</symbol>
+
+<!-- RAIN + SNOW -->
+<symbol id="icon-rain-snow" viewBox="0 0 24 24">
+  <path d="M7 14.5a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 14.5H7z"
+        fill="#cfd8dc"/>
+  <circle cx="9" cy="18.5" r="0.9" fill="#4fc3f7"/>
+  <circle cx="13" cy="18.5" r="0.9" fill="#e0f7fa"/>
+  <circle cx="16" cy="18.5" r="0.9" fill="#e0f7fa"/>
+</symbol>
+
+<!-- SNOW -->
+<symbol id="icon-snow" viewBox="0 0 24 24">
+  <path d="M7 15a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 15H7z"
+        fill="#cfd8dc"/>
+  <g fill="#e0f7fa">
+    <circle cx="9" cy="19" r="1"/>
+    <circle cx="12" cy="19" r="1"/>
+    <circle cx="15" cy="19" r="1"/>
+  </g>
+</symbol>
+
+<!-- THUNDER -->
+<symbol id="icon-thunder" viewBox="0 0 24 24">
+  <path d="M7 15a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 15H7z"
+        fill="#cfd8dc"/>
+  <path d="M13 10l-2 4h2l-1 4 4-6h-3z"
+        fill="#ffd166"/>
+</symbol>
+
+<!-- THUNDER + RAIN -->
+<symbol id="icon-thunder-rain" viewBox="0 0 24 24">
+  <path d="M7 14.5a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 14.5H7z"
+        fill="#cfd8dc"/>
+  <path d="M13 9.5l-2 4h2l-1 4 4-6h-3z"
+        fill="#ffd166"/>
+  <g fill="#4fc3f7">
+    <circle cx="9" cy="19" r="0.9"/>
+    <circle cx="15" cy="19" r="0.9"/>
+  </g>
+</symbol>
+
+<!-- ATMOSPHERE -->
+<symbol id="icon-mist" viewBox="0 0 24 24">
+  <path d="M4 9h16" stroke="#b0bec5" stroke-width="2" stroke-linecap="round"/>
+  <path d="M4 13h16" stroke="#b0bec5" stroke-width="2" stroke-linecap="round"/>
+  <path d="M4 17h16" stroke="#b0bec5" stroke-width="2" stroke-linecap="round"/>
+</symbol>
+
+<symbol id="icon-fog" viewBox="0 0 24 24">
+  <path d="M5 9h14" stroke="#b0bec5" stroke-width="2" stroke-linecap="round"/>
+  <path d="M4 12h16" stroke="#b0bec5" stroke-width="2" stroke-linecap="round"/>
+  <path d="M5 15h14" stroke="#b0bec5" stroke-width="2" stroke-linecap="round"/>
+  <path d="M6 18h12" stroke="#b0bec5" stroke-width="2" stroke-linecap="round"/>
+</symbol>
+
+<symbol id="icon-haze" viewBox="0 0 24 24">
+  <path d="M4 9h16" stroke="#b0bec5" stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>
+  <path d="M4 12h16" stroke="#b0bec5" stroke-width="1.6" stroke-linecap="round" opacity="0.9"/>
+  <path d="M4 15h16" stroke="#b0bec5" stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>
+</symbol>
+
+<symbol id="icon-dust" viewBox="0 0 24 24">
+  <path d="M4 10h12" stroke="#b0bec5" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M6 13h14" stroke="#b0bec5" stroke-width="1.6" stroke-linecap="round"/>
+  <circle cx="7" cy="17" r="0.7" fill="#b0bec5"/>
+  <circle cx="11" cy="18" r="0.7" fill="#b0bec5"/>
+  <circle cx="15" cy="17" r="0.7" fill="#b0bec5"/>
+</symbol>
+
+<symbol id="icon-smoke" viewBox="0 0 24 24">
+  <path d="M6 16c2 1.5 4-1.5 6 0s4 1.5 6 0"
+        fill="none" stroke="#b0bec5" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M6 12c2 1.5 4-1.5 6 0s4 1.5 6 0"
+        fill="none" stroke="#b0bec5" stroke-width="1.6" stroke-linecap="round" opacity="0.8"/>
+</symbol>
+
+<symbol id="icon-squall" viewBox="0 0 24 24">
+  <path d="M5 10h11" stroke="#b0bec5" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M8 13h11" stroke="#b0bec5" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M7 17l3-1.5 3 1.5 3-1.5"
+        fill="none" stroke="#4fc3f7" stroke-width="1.6" stroke-linecap="round"/>
+</symbol>
+
+<symbol id="icon-tornado" viewBox="0 0 24 24">
+  <path d="M5 8h14M7 11h10M8 14h8M9 17h6M10 19h4"
+        fill="none" stroke="#b0bec5" stroke-width="1.8" stroke-linecap="round"/>
+</symbol>
+
+<!-- UNKNOWN -->
+<symbol id="icon-unknown" viewBox="0 0 24 24">
+  <circle cx="12" cy="12" r="10" fill="#9fb6c2"/>
+  <text x="12" y="16" font-size="10" text-anchor="middle" fill="#071018">?</text>
+</symbol>
+
+
+  </svg>
+
+  <div class="container">
+    <div class="card">
+<div class="topBand">
+  <!-- LEFT COLUMN -->
+  <div class="leftBandRow">
+    <div class="leftContentWrap">
+
+      <!-- Top row limiter wraps the entire topRowItems block -->
+      <div class="topRowLimiter">
+        <div class="topRowItems" role="group" aria-label="Current conditions row">
+
+          <!-- conditionWrap -->
+          <div class="conditionWrap" title="Current condition">
+            <div class="conditionIcon" id="conditionIcon" aria-hidden="false">
+              <svg id="conditionIconSvg" viewBox="0 0 24 24" role="img" aria-label="condition">
+                <use href="#icon-unknown"></use>
+              </svg>
+            </div>
+            <div class="conditionText" id="conditionText">—</div>
+          </div>
+
+          <!-- tempWrap -->
+          <div class="tempWrap" aria-live="polite">
+            <div class="tempStack">
+              <div class="tempValue" id="airTemp">
+                <span id="airTempNum">—</span><span class="tempUnit">°F</span>
+              </div>
+            </div>
+            <div class="feelsLikeUnder" id="feelsLikeUnder">Feels like —°</div>
+
+            <div class="tempMeta">
+              <div class="summary" id="airSummaryVisuallyHidden" style="display:none">—</div>
+            </div>
+          </div>
+
+          <!-- windWrap -->
+          <div class="windWrap">
+            <div class="miniCard" aria-label="Wind">
+              <div class="compassWrap" title="Wind direction">
+                <svg class="compassSvg" viewBox="0 0 100 100" role="img" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="cg" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stop-color="rgba(255,255,255,0.03)"/>
+                      <stop offset="100%" stop-color="rgba(0,0,0,0.06)"/>
+                    </linearGradient>
+                  </defs>
+                  <circle cx="50" cy="50" r="44" fill="url(#cg)" stroke="rgba(255,255,255,0.04)" stroke-width="1.2"></circle>
+                  <g id="compassTicks"></g>
+                  <g font-family="system-ui" font-size="7" fill="var(--muted)" text-anchor="middle">
+                    <text x="50" y="10">N</text><text x="90" y="50">E</text><text x="50" y="90">S</text><text x="10" y="50">W</text>
+                  </g>
+                  <g id="windHistoryArc"></g>
+
+                  <!-- Wind speed number -->
+                  <text id="windSpeedNumber" x="50" y="42" text-anchor="middle" fill="white" font-size="18" font-weight="600"></text>
+
+                  <!-- Unit label -->
+                  <text id="windSpeedUnit" x="50" y="54" text-anchor="middle" fill="rgba(255,255,255,0.65)" font-size="8"></text>
+
+                  <!-- Gusts (shifted slightly lower) -->
+                  <text id="windGustText" x="50" y="68" text-anchor="middle" fill="rgba(255,255,255,0.65)" font-size="9"></text>
+
+                  <g id="needleGroup" transform="rotate(0 50 50)">
+                    <polygon points="50,4 46,12 54,12" fill="#ff4d4d" />
+                  </g>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- rainWrap -->
+          <div class="rainWrap">
+            <div class="miniCard" aria-label="Rain">
+              <div class="miniLabel">Rain Today</div>
+              <div id="rainGauge" aria-hidden="true">
+                <div id="gaugeFill" style="height:0%"></div>
+                <div id="gaugeTicks" style="position:absolute;left:0;right:0;top:6px;bottom:6px;display:flex;flex-direction:column;justify-content:space-between;padding:0 6px;pointer-events:none"></div>
+              </div>
+              <div class="gaugeAmount" id="gaugeAmount" style="margin-top:6px;font-weight:700">0.00 in</div>
+            </div>
+          </div>
+
+</div> <!-- /.topRowItems -->
+</div> <!-- /.topRowLimiter -->
+
+<!-- Replace the old sparkFull placement with this topBlock wrapper -->
+<div class="topBlock">
+  <!-- Sparkline sits directly under the top row and will match its width -->
+  <div class="sparkFull" aria-hidden="false">
+    <div class="sparkWrap" role="img" aria-label="Temperature sparkline">
+      <canvas id="tempSpark"></canvas>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:6px">
+      <div class="mutedTiny" id="sparkNow">Now —</div>
+      <div class="mutedTiny" id="sparkRange">— / —</div>
+    </div>
+  </div> <!-- /.sparkFull -->
+</div> <!-- /.topBlock -->
+
+</div> <!-- /.leftContentWrap -->
+</div> <!-- /.leftBandRow -->
+
+
+<!-- RIGHT COLUMN -->
+<div class="rightBand" aria-hidden="false">
+  <div class="topGrid">
+
+    <!-- Pressure -->
+    <div class="gridCard pressureCard">
+      <div class="cardIcon">
+<svg class="pressureGauge" viewBox="0 0 100 100">
+
+  <!-- Major ticks (every 30°) -->
+  <g stroke="#ccc" stroke-width="3">
+    <line x1="50" y1="0"   x2="50" y2="12"/>
+    <line x1="85" y1="15"  x2="78" y2="25"/>
+    <line x1="100" y1="50" x2="88" y2="50"/>
+    <line x1="85" y1="85"  x2="78" y2="75"/>
+    <line x1="50" y1="100" x2="50" y2="88"/>
+    <line x1="15" y1="85"  x2="22" y2="75"/>
+    <line x1="0"  y1="50"  x2="12" y2="50"/>
+    <line x1="15" y1="15"  x2="22" y2="25"/>
+  </g>
+
+  <!-- Minor ticks (every 10°) -->
+  <g stroke="#999" stroke-width="1.5">
+    <line x1="50" y1="0"   x2="50" y2="8"/>
+    <line x1="68" y1="4"   x2="64" y2="12"/>
+    <line x1="84" y1="16"  x2="78" y2="22"/>
+    <line x1="96" y1="32"  x2="88" y2="36"/>
+    <line x1="100" y1="50" x2="92" y2="50"/>
+    <line x1="96" y1="68"  x2="88" y2="64"/>
+    <line x1="84" y1="84"  x2="78" y2="78"/>
+    <line x1="68" y1="96"  x2="64" y2="88"/>
+    <line x1="50" y1="100" x2="50" y2="92"/>
+    <line x1="32" y1="96"  x2="36" y2="88"/>
+    <line x1="16" y1="84"  x2="22" y2="78"/>
+    <line x1="4"  y1="68"  x2="12" y2="64"/>
+    <line x1="0"  y1="50"  x2="8"  y2="50"/>
+    <line x1="4"  y1="32"  x2="12" y2="36"/>
+    <line x1="16" y1="16"  x2="22" y2="22"/>
+    <line x1="32" y1="4"   x2="36" y2="12"/>
+  </g>
+
+</svg>
+
+
+
+        <div class="pressureValue" id="pressureValue">—</div>
+        <div class="pressureTrend" id="pressureTrend">—</div>
+      </div>
+      <div class="cardLabel">Pressure</div>
+    </div>
+
+    <!-- Sunrise/Sunset -->
+    <div class="gridCard sunCard">
+      <div class="cardIcon">
+        <div class="sunIcon" id="sunNextIcon"></div>
+      </div>
+      <div class="cardLabel" id="sunNextTime">—</div>
+    </div>
+
+    <!-- Moon Phase -->
+    <div class="gridCard moonCard">
+      <div class="cardIcon">
+        <div id="moonIcon"></div>
+      </div>
+      <div class="cardLabel" id="moonLabel"></div>
+    </div>
+
+    <!-- Humidity -->
+    <div class="gridCard humidityCard">
+      <div class="cardIcon">
+        <div id="humidityIcon"></div>
+      </div>
+      <div class="cardLabel">Humidity</div>
+    </div>
+
+  </div> <!-- /.topGrid -->
+</div> <!-- /.rightBand -->
+
+</div> <!-- /.topBand -->
+
+
+    <div class="card tideRow">
+      <div style="flex:1;min-width:0">
+        
+        <canvas id="tideCanvas" aria-label="Tide chart"></canvas>
+      </div>
+
+      <div class="oceanStack">
+
+        <div class="stackBox">
+          <div style="font-size:13px;color:var(--muted)">Sea Temperature</div>
+          <div style="font-weight:800;font-size:16px" id="seaTemp">—</div>
+          <div class="mutedTiny" id="seaSource">—</div>
+        </div>
+
+<div class="stackBox">
+  <div style="font-size:13px;color:var(--muted)">Swell</div>
+  <div style="font-weight:800;font-size:16px" id="swellHeight">—</div>
+  <div class="mutedTiny" id="swellPeriod">—</div>
+</div>
+
+
+
+        <div class="stackBox">
+          <div style="font-size:13px;color:var(--muted)">Visibility</div>
+          <div style="font-weight:800;font-size:16px" id="visibility">—</div>
+          <div class="mutedTiny" id="buoySource">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:700;font-size:16px">5‑Day Forecast</div>
+        <div class="mutedTiny">Updated <span id="updatedText">—</span></div>
+      </div>
+      <div class="forecastRow" id="forecastList" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <script>
+
+
+  // -------------------------
+  // CONFIG
+  // -------------------------
+  const WORKER_URL = 'https://fancy-bar-cc6d.jonbolton782.workers.dev';
+  const FALLBACK_COORDS = { lat: 43.7, lon: -69.9 };
+
+
+// Sunrise / Sunset SVG icons
+const sunriseSvg = `
+<svg viewBox="0 0 100 100" class="sunIconSvg">
+
+  <!-- Gradient for the sun -->
+  <defs>
+    <linearGradient id="sunriseGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD36A"/>
+      <stop offset="100%" stop-color="#FF8C3A"/>
+    </linearGradient>
+
+    <!-- Mask to hide the LOWER part of the sun (sun rising) -->
+    <clipPath id="sunriseClip">
+      <rect x="0" y="40" width="100" height="60" />
+    </clipPath>
+  </defs>
+
+  <!-- Sun (large, clipped so bottom is hidden below horizon) -->
+  <circle cx="50" cy="40" r="26"
+          fill="url(#sunriseGrad)"
+          clip-path="url(#sunriseClip)" />
+
+  <!-- Upward arrow BELOW the horizon but still inside the sun -->
+  <g stroke="white" stroke-width="5" stroke-linecap="round">
+    <line x1="50" y1="78" x2="50" y2="58"/>
+    <line x1="42" y1="66" x2="50" y2="58"/>
+    <line x1="58" y1="66" x2="50" y2="58"/>
+  </g>
+
+  <!-- Rays (above the sun) -->
+  <g stroke="#FFD36A" stroke-width="5" stroke-linecap="round">
+    <line x1="50" y1="4"  x2="50" y2="18"/>
+    <line x1="72" y1="10" x2="64" y2="22"/>
+    <line x1="28" y1="10" x2="36" y2="22"/>
+    <line x1="84" y1="28" x2="72" y2="34"/>
+    <line x1="16" y1="28" x2="28" y2="34"/>
+  </g>
+
+  <!-- Horizon line -->
+  <line x1="10" y1="40" x2="90" y2="40"
+        stroke="white" stroke-width="5" stroke-linecap="round"/>
+
+</svg>
+
+
+`;
+
+const sunsetSvg = `
+<svg viewBox="0 0 100 100" class="sunIconSvg">
+
+  <!-- Gradient for the sun -->
+  <defs>
+    <linearGradient id="sunsetGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD36A"/>
+      <stop offset="100%" stop-color="#FF8C3A"/>
+    </linearGradient>
+
+    <!-- Mask to hide the lower part of the sun -->
+    <clipPath id="sunsetClip">
+      <rect x="0" y="0" width="100" height="60" />
+    </clipPath>
+  </defs>
+
+  <!-- Sun (large, clipped so bottom is hidden) -->
+  <circle cx="50" cy="70" r="26"
+          fill="url(#sunsetGrad)"
+          clip-path="url(#sunsetClip)" />
+
+  <!-- Downward arrow BELOW the horizon but still inside the sun -->
+  <g stroke="white" stroke-width="5" stroke-linecap="round">
+    <line x1="50" y1="62" x2="50" y2="82"/>
+    <line x1="42" y1="74" x2="50" y2="82"/>
+    <line x1="58" y1="74" x2="50" y2="82"/>
+  </g>
+
+  <!-- Rays (above horizon only) -->
+  <g stroke="#FFD36A" stroke-width="5" stroke-linecap="round">
+    <line x1="50" y1="18" x2="50" y2="32"/>
+    <line x1="72" y1="24" x2="64" y2="36"/>
+    <line x1="28" y1="24" x2="36" y2="36"/>
+    <line x1="84" y1="42" x2="72" y2="48"/>
+    <line x1="16" y1="42" x2="28" y2="48"/>
+  </g>
+
+  <!-- Horizon line -->
+  <line x1="10" y1="60" x2="90" y2="60"
+        stroke="white" stroke-width="5" stroke-linecap="round"/>
+
+</svg>
+
+
+
+
+`;
+
+
+ // -------------------------
+  // humidity
+  // -------------------------
+
+const humiditySvgBase = `
+<svg viewBox="0 0 100 100" class="humidityIconSvg">
+
+  <!-- Wider, smoother droplet shape -->
+  <path id="humidityDroplet"
+        d="M50 8
+           C32 30, 20 50, 20 68
+           A30 30 0 0 0 80 68
+           C80 50, 68 30, 50 8Z"
+        fill="rgba(0,0,0,0)" />
+
+  <!-- Centered humidity text -->
+  <text id="humidityText"
+        x="50"
+        y="70"
+        text-anchor="middle"
+        font-size="32"
+        font-family="sans-serif"
+        fill="white">--</text>
+
+</svg>
+`;
+
+
+ // -------------------------
+  // MOON PHASES
+  // -------------------------
+const moonSvgBase = `
+<svg viewBox="0 0 100 100" class="moonIconSvg">
+
+  <defs>
+    <filter id="moonGlowFilter">
+      <feDropShadow dx="0" dy="0" stdDeviation="1.5"
+                    flood-color="white" flood-opacity="0.25"/>
+    </filter>
+
+    <radialGradient id="moonShadeGradient" cx="60%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="white"/>
+      <stop offset="100%" stop-color="#d0d0d0"/>
+    </radialGradient>
+
+    <!-- Mask for moon phase -->
+    <mask id="moonPhaseMask">
+      <rect width="100" height="100" fill="white"/>
+      <!-- THIS is the missing element -->
+      <circle id="moonShadowCircle" cx="50" cy="50" r="28" fill="black"/>
+    </mask>
+  </defs>
+
+  <!-- Base moon -->
+  <circle cx="50" cy="50" r="28"
+          fill="url(#moonShadeGradient)"
+          stroke="white"
+          stroke-width="2"
+          filter="url(#moonGlowFilter)"
+          mask="url(#moonPhaseMask)"/>
+
+</svg>
+
+`;
+
+
+
+
+
+ // -------------------------
+  // OWM → ICON MAPPING
+  // -------------------------
+  function mapOwmToIconId(code, iconStr) {
+    const c = Number(code);
+    const night = typeof iconStr === 'string' && iconStr.endsWith('n');
+
+    if (c === 800) return night ? 'icon-clear-night' : 'icon-clear-day';
+    if (c === 801) return night ? 'icon-few-clouds-night' : 'icon-few-clouds-day';
+    if (c === 802) return 'icon-scattered-clouds';
+    if (c === 803) return 'icon-broken-clouds';
+    if (c === 804) return 'icon-overcast';
+
+    if (c >= 200 && c <= 232) {
+      if (c === 210 || c === 211 || c === 212 || c === 221) return 'icon-thunder';
+      return 'icon-thunder-rain';
+    }
+
+    if (c >= 300 && c <= 321) return 'icon-drizzle';
+
+    if (c === 500) return 'icon-light-rain';
+    if (c === 501) return 'icon-rain';
+    if (c >= 502 && c <= 504) return 'icon-heavy-rain';
+    if (c === 511) return 'icon-sleet';
+    if (c >= 520 && c <= 531) return 'icon-shower-rain';
+
+    if (c >= 600 && c <= 602) return 'icon-snow';
+    if (c >= 611 && c <= 616) return 'icon-rain-snow';
+    if (c >= 620 && c <= 622) return 'icon-snow';
+
+    if (c === 701) return 'icon-mist';
+    if (c === 711) return 'icon-smoke';
+    if (c === 721) return 'icon-haze';
+    if (c === 731 || c === 751 || c === 761) return 'icon-dust';
+    if (c === 741) return 'icon-fog';
+    if (c === 762) return 'icon-smoke';
+    if (c === 771) return 'icon-squall';
+    if (c === 781) return 'icon-tornado';
+
+    return 'icon-unknown';
+  }
+
+function updateWindHistoryArc() {
+  const arcGroup = document.getElementById("windHistoryArc");
+  if (!arcGroup) return;
+
+  arcGroup.innerHTML = "";
+  if (!windDirHistory.length) return;
+
+  const bucketSize = 5;
+  const bucketCount = 360 / bucketSize;
+  const buckets = new Array(bucketCount).fill(0);
+
+  windDirHistory.forEach(dir => {
+    const idx = Math.floor((dir % 360) / bucketSize);
+    buckets[idx]++;
+  });
+
+  const maxCount = Math.max(...buckets, 1);
+  const cx = 50, cy = 50, r = 44;
+
+  buckets.forEach((count, i) => {
+    if (count === 0) return;
+
+    const start = i * bucketSize;
+    const end = start + bucketSize;
+    const density = count / maxCount;
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", describeArc(cx, cy, r, start, end));
+    path.setAttribute("stroke", `rgba(255,255,255,${0.05 + density * 0.25})`);
+    path.setAttribute("stroke-width", "3");
+    path.setAttribute("fill", "none");
+
+    arcGroup.appendChild(path);
+  });
+}
+
+function polarToCartesian(cx, cy, r, angleDeg) {
+  const rad = (angleDeg - 90) * Math.PI / 180;
+  return {
+    x: cx + r * Math.cos(rad),
+    y: cy + r * Math.sin(rad)
+  };
+}
+
+function describeArc(cx, cy, r, startAngle, endAngle) {
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end = polarToCartesian(cx, cy, r, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+  return [
+    "M", start.x, start.y,
+    "A", r, r, 0, largeArcFlag, 0, end.x, end.y
+  ].join(" ");
+}
+
+
+
+  // Wind direction history (120 minutes, 24 samples)
+  let windDirHistory = []; 
+
+
+  // -------------------------
+  // UTILITIES
+  // -------------------------
+  function toMs(v){ if (v === null || v === undefined) return null; if (typeof v === 'number') return v < 1e12 ? v * 1000 : v; const n = Number(v); if (isNaN(n)) return null; return n < 1e12 ? n * 1000 : n; }
+  function setText(id, value){ const el = document.getElementById(id); if (!el) return; el.textContent = value; }
+  function safeNum(v){ if (v === null || v === undefined) return null; const n = Number(v); return isFinite(n) ? n : null; }
+  function cToF(c){ return (c * 9/5) + 32; }
+  function mphFromKph(kph){ if (kph === null || kph === undefined || isNaN(kph)) return null; return Number((kph / 1.60934)); }
+
+  // -------------------------
+  // UI helpers
+  // -------------------------
+  function uiScale(){
+    const el = document.getElementById('airTempNum');
+    if (!el) return 1;
+    const fs = parseFloat(window.getComputedStyle(el).fontSize) || 96;
+    const base = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--base-temp-size')) || 96;
+    return fs / base;
+  }
+
+  // -------------------------
+  // Condition icon mapping (cloning symbol contents)
+  // -------------------------
+
+function setConditionIcon(code, iconStr) {
+  const svg = document.getElementById('conditionIconSvg');
+  if (!svg) return;
+
+  // compute icon id from mapper
+  const iconId = (typeof mapOwmToIconId === 'function') ? mapOwmToIconId(code, iconStr) : null;
+
+  // ensure visible defaults
+  svg.style.display = svg.style.display || 'block';
+  svg.style.width = svg.style.width || '48px';
+  svg.style.height = svg.style.height || '48px';
+  svg.style.opacity = svg.style.opacity || '1';
+  if (!svg.getAttribute('role')) svg.setAttribute('role', 'img');
+
+  // find the symbol
+  const sym = iconId ? document.getElementById(iconId) : null;
+
+  if (sym && sym.ownerDocument === document) {
+    // copy viewBox (handle both viewBox and viewbox)
+    const vb = sym.getAttribute('viewBox') || sym.getAttribute('viewbox') || '0 0 24 24';
+    svg.setAttribute('viewBox', vb);
+
+    // copy symbol children into the target svg (avoid <use> quirks)
+    svg.innerHTML = sym.innerHTML;
+
+    // ensure a visible fill color for all shapes
+    const fillColor = svg.getAttribute('data-fill') || '#071018';
+    svg.style.fill = fillColor;
+    Array.from(svg.querySelectorAll('path,rect,circle,polygon,ellipse,line')).forEach(n => {
+      if (!n.getAttribute('fill')) n.setAttribute('fill', fillColor);
+      n.removeAttribute('mask');
+      n.removeAttribute('clip-path');
+    });
+
+    svg.setAttribute('aria-label', iconId);
+    return;
+  }
+
+  // fallback: if symbol exists but not in same document, or missing, try <use> then final badge
+  svg.innerHTML = '';
+  if (iconId) {
+    // try <use> as a fallback
+    const use = document.createElementNS('http://www.w3.org/2000/svg','use');
+    use.setAttribute('href', `#${iconId}`);
+    use.setAttributeNS('http://www.w3.org/1999/xlink','href', `#${iconId}`);
+    use.setAttribute('fill', svg.getAttribute('data-fill') || '#cfd8dc');
+    svg.appendChild(use);
+
+    // if nothing renders, clone after next frame
+    requestAnimationFrame(() => {
+      try {
+        const bbox = svg.getBBox();
+        if (!bbox || (bbox.width === 0 && bbox.height === 0)) {
+          const sym2 = document.getElementById(iconId);
+          if (sym2) {
+            svg.innerHTML = sym2.innerHTML;
+            svg.setAttribute('viewBox', sym2.getAttribute('viewBox') || sym2.getAttribute('viewbox') || '0 0 24 24');
+          }
+        }
+      } catch (e) {
+        // fallback to badge below
+      }
+    });
+
+    svg.setAttribute('aria-label', iconId);
+    return;
+  }
+
+  // final fallback badge
+  const ns = 'http://www.w3.org/2000/svg';
+  svg.innerHTML = '';
+  svg.setAttribute('viewBox', '0 0 24 24');
+  const circle = document.createElementNS(ns,'circle');
+  circle.setAttribute('cx','12'); circle.setAttribute('cy','12'); circle.setAttribute('r','10'); circle.setAttribute('fill','#9fb6c2');
+  svg.appendChild(circle);
+  const text = document.createElementNS(ns,'text');
+  text.setAttribute('x','12'); text.setAttribute('y','16'); text.setAttribute('font-size','10'); text.setAttribute('text-anchor','middle'); text.setAttribute('fill','#071018');
+  text.textContent = (iconStr || '').toString().slice(0,3).toUpperCase();
+  svg.appendChild(text);
+  svg.setAttribute('aria-label', 'icon-unknown');
+}
+
+
+  // -------------------------
+  // Pressure trend helper
+  // -------------------------
+  function setPressureTrendIcon(elId, deltaInHg){
+    const el = document.getElementById(elId);
+    if (!el) return;
+    if (deltaInHg === null || deltaInHg === undefined) { el.textContent = '—'; el.title = 'Trend unknown'; el.style.color = 'var(--muted)'; return; }
+    if (Math.abs(deltaInHg) < 0.01) { el.textContent = '—'; el.title = 'Steady'; el.style.color = 'var(--muted)'; }
+    else if (deltaInHg > 0) { el.textContent = '▲'; el.title = 'Rising'; el.style.color = '#2aa876'; }
+    else { el.textContent = '▼'; el.title = 'Falling'; el.style.color = 'var(--danger)'; }
+  }
+
+  // -------------------------
+  // Sunrise / Moon / Tide helpers (complete)
+  // -------------------------
+  async function fetchSunTimes(lat, lon){
+    try {
+      const iso = new Date().toISOString().slice(0,10);
+      const url = `https://api.sunrise-sunset.org/json?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lon)}&date=${iso}&formatted=0`;
+      const r = await fetch(url);
+      if (!r.ok) return null;
+      const j = await r.json();
+      if (j.status !== 'OK') return null;
+      return { sunrise: new Date(j.results.sunrise), sunset: new Date(j.results.sunset) };
+    } catch (e) { console.warn('fetchSunTimes failed', e); return null; }
+  }
+
+function getMoonPhase(date = new Date()){
+  const lp = 2551443; // lunar period in seconds
+  const now = Math.floor(date.getTime() / 1000);
+  const new_moon = Math.floor(new Date("2000-01-06T18:14:00Z").getTime() / 1000);
+
+  // 0.0 → new moon, 0.5 → full moon, 1.0 → new moon again
+  const fraction = ((now - new_moon) % lp) / lp;
+
+  const phases = [
+    { name: 'New Moon', index: 0 },
+    { name: 'Waxing Crescent', index: 1 },
+    { name: 'First Quarter', index: 2 },
+    { name: 'Waxing Gibbous', index: 3 },
+    { name: 'Full', index: 4 },
+    { name: 'Waning Gibbous', index: 5 },
+    { name: 'Last Quarter', index: 6 },
+    { name: 'Waning Crescent', index: 7 }
+  ];
+
+  const idx = Math.floor(fraction * 8) % 8;
+
+  return {
+    name: phases[idx].name,
+    index: phases[idx].index,
+    fraction // ← THIS is what the SVG needs
+  };
+
+  }
+
+function getMoonKeyword(phaseText) {
+  phaseText = phaseText.toLowerCase();
+
+  if (phaseText.includes("new")) return "New";
+  if (phaseText.includes("full")) return "Full";
+  if (phaseText.includes("waxing")) return "Waxing";
+  if (phaseText.includes("waning")) return "Waning";
+  if (phaseText.includes("quarter")) return "Quarter";
+
+  return "";
+}
+
+
+
+
+
+
+  // -------------------------
+  // Sparkline (DPR-aware)
+  // -------------------------
+  function drawTempSparkline(points){
+    const canvas = document.getElementById('tempSpark');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,rect.width,rect.height);
+
+    if (!Array.isArray(points) || points.length === 0){
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#9fb6c2';
+      ctx.font = '12px system-ui';
+      ctx.fillText('No recent temps', 8, rect.height/2 + 4);
+      setText('sparkNow','Now —');
+      setText('sparkRange','— / —');
+      return;
+    }
+
+    const scale = uiScale();
+    const vals = points.map(p => p.f);
+    const minF = Math.min(...vals);
+    const maxF = Math.max(...vals);
+    const padX = 6, padY = 6;
+    const w = rect.width - padX*2;
+    const h = rect.height - padY*2;
+    const t0 = points[0].ts, t1 = points[points.length-1].ts;
+    const denom = (t1 - t0) || 1;
+    const mapX = ts => padX + ((ts - t0) / denom) * w;
+    const mapY = f => padY + (1 - (f - minF) / Math.max(1e-6, (maxF - minF))) * h;
+
+    ctx.beginPath();
+    points.forEach((p,i) => {
+      const x = mapX(p.ts), y = mapY(p.f);
+      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.lineTo(padX + w, padY + h);
+    ctx.lineTo(padX, padY + h);
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0,padY,0,padY+h);
+    grad.addColorStop(0,'rgba(42,168,118,0.16)');
+    grad.addColorStop(1,'rgba(42,168,118,0.02)');
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.beginPath();
+    points.forEach((p,i) => {
+      const x = mapX(p.ts), y = mapY(p.f);
+      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle = '#2aa876';
+    ctx.lineWidth = Math.max(1, 2 * scale);
+    ctx.stroke();
+
+    const last = points[points.length-1];
+    const nowX = mapX(last.ts);
+    ctx.strokeStyle = 'rgba(255,140,66,0.95)';
+    ctx.lineWidth = Math.max(1, 1.5 * scale);
+    ctx.beginPath(); ctx.moveTo(nowX, padY); ctx.lineTo(nowX, padY + h); ctx.stroke();
+
+    ctx.beginPath(); ctx.fillStyle = '#071018'; ctx.strokeStyle = '#2aa876'; ctx.lineWidth = Math.max(1, 1.2 * scale);
+    ctx.arc(nowX, mapY(last.f), Math.max(2, 4 * scale), 0, Math.PI*2); ctx.fill(); ctx.stroke();
+
+    setText('sparkNow','Now ' + last.f.toFixed(1) + '°F');
+    setText('sparkRange', minF.toFixed(1) + '°F / ' + maxF.toFixed(1) + '°F');
+  }
+
+  // -------------------------
+  // Tide chart (DPR-aware)
+  // -------------------------
+  function drawTideChart(samples, highs, lows, sunriseTs, sunsetTs){
+    const toMsLocal = v => { if (v === null || v === undefined) return null; if (typeof v !== 'number') v = Number(v); if (isNaN(v)) return null; return v < 1e12 ? v * 1000 : v; };
+    const c = document.getElementById('tideCanvas');
+    if (!c) return;
+    const ctx = c.getContext('2d');
+    requestAnimationFrame(() => {
+      const rect = c.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      c.width = Math.round(rect.width * dpr);
+      c.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      ctx.clearRect(0,0,rect.width,rect.height);
+
+      const raw = Array.isArray(samples) ? samples.map(p => ({ ts: toMsLocal(p.ts), height: Number(p.height) })) : [];
+      const H = Array.isArray(highs) ? highs.map(p => ({ ts: toMsLocal(p.ts), height: Number(p.height) })) : [];
+      const L = Array.isArray(lows) ? lows.map(p => ({ ts: toMsLocal(p.ts), height: Number(p.height) })) : [];
+
+      const now = Date.now();
+      const halfDay = 12 * 3600 * 1000;
+      const windowStart = now - halfDay;
+      const windowEnd = now + halfDay;
+
+      let pts = raw.filter(p => p.ts >= windowStart && p.ts <= windowEnd).sort((a,b)=>a.ts-b.ts);
+
+      if (!pts || pts.length < 2){
+        const combined = [...H.map(h=>({...h,type:'H'})), ...L.map(l=>({...l,type:'L'}))].filter(p=>p.ts && !isNaN(p.height)).sort((a,b)=>a.ts-b.ts);
+        if (combined.length){
+          const out = [];
+          for (let i=0;i<combined.length-1;i++){
+            const a = combined[i], b = combined[i+1];
+            const steps = Math.max(1, Math.floor((b.ts - a.ts) / (60*1000)));
+            for (let s=0;s<=steps;s++){
+              const t = a.ts + (s/steps)*(b.ts - a.ts);
+              const y = 0.5*(a.height + b.height) + 0.5*(a.height - b.height)*Math.cos(Math.PI*(s/steps));
+              out.push({ ts: Math.round(t), height: y });
+            }
+          }
+          pts = out.filter(p => p.ts >= windowStart && p.ts <= windowEnd);
+        }
+      }
+
+      if (!pts || pts.length < 2){
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#9fb6c2';
+        ctx.font = '14px system-ui';
+        ctx.fillText('Tide data unavailable', 12, 40);
+        return;
+      }
+
+      const smooth = [];
+      for (let i=0;i<pts.length;i++){
+        const prev = pts[i-1] ? pts[i-1].height : pts[i].height;
+        const cur = pts[i].height;
+        const next = pts[i+1] ? pts[i+1].height : pts[i].height;
+        smooth.push({ ts: pts[i].ts, height: (prev + cur + next) / 3 });
+      }
+      pts = smooth;
+
+      const heights = pts.map(p => p.height);
+      const minH = Math.min(...heights);
+      const maxH = Math.max(...heights);
+      const range = (maxH - minH) || 1;
+
+      const padLeft = 56, pad = 12, topOffset = 26;
+      const w = rect.width - padLeft - pad;
+      const h = rect.height - pad*2 - topOffset;
+      const originX = padLeft, originY = pad + topOffset;
+
+      const vPadFrac = 0.26;
+      const paddedMinH = minH - range * vPadFrac;
+      const paddedMaxH = maxH + range * vPadFrac;
+      const paddedRange = (paddedMaxH - paddedMinH) || 1;
+
+      const mapX = ts => originX + ((ts - windowStart) / (windowEnd - windowStart)) * w;
+      const mapY = height => originY + h - ((height - paddedMinH) / paddedRange) * h;
+
+      // Night shading using sunrise/sunset
+      (function(){
+        const sMs = toMsLocal(sunriseTs), setMs = toMsLocal(sunsetTs);
+        if (sMs && setMs){
+          ctx.save();
+          ctx.fillStyle = 'rgba(6,18,30,0.70)';
+          const day = 24*3600*1000;
+          for (let k=-2;k<=2;k++){
+            const start = setMs + k*day;
+            const end = sMs + (k+1)*day;
+            const s = Math.max(start, windowStart);
+            const e = Math.min(end, windowEnd);
+            if (e > s){
+              const x1 = mapX(s), x2 = mapX(e);
+              ctx.fillRect(Math.max(originX,x1), originY, Math.max(0, Math.min(originX+w,x2) - Math.max(originX,x1)), h);
+            }
+          }
+          ctx.restore();
+        }
+      })();
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#9fb6c2';
+      ctx.font = '12px system-ui';
+      ctx.textAlign = 'right';
+      const M_TO_FT = 3.28084;
+      const yTicks = 4;
+      for (let i=0;i<=yTicks;i++){
+        const frac = i / yTicks;
+        const y = originY + (h * frac);
+        const val = paddedMaxH - paddedRange * frac;
+        ctx.beginPath(); ctx.moveTo(originX, y); ctx.lineTo(originX + w, y); ctx.stroke();
+        ctx.fillText((val * M_TO_FT).toFixed(1) + ' ft', originX - 8, y + 4);
+      }
+
+      ctx.beginPath();
+      pts.forEach((p, idx) => {
+        const x = mapX(Math.max(windowStart, Math.min(windowEnd, p.ts)));
+        const y = mapY(p.height);
+        if (idx===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      });
+      ctx.strokeStyle = 'rgba(120,210,200,0.98)';
+      ctx.lineWidth = 3 * uiScale();
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      ctx.lineTo(originX + w, originY + h);
+      ctx.lineTo(originX, originY + h);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(120,210,200,0.08)';
+      ctx.fill();
+
+      (H||[]).forEach(hp => {
+        if (!hp.ts || hp.ts < windowStart || hp.ts > windowEnd) return;
+        const x = mapX(hp.ts), y = mapY(hp.height);
+        ctx.fillStyle = '#ffd166';
+        ctx.beginPath(); ctx.arc(x,y,4 * uiScale(),0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#9fb6c2';
+        ctx.font = `${11 * uiScale()}px system-ui`;
+        ctx.textAlign = 'left';
+        ctx.fillText(new Date(hp.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + ' H ' + (hp.height/0.3048).toFixed(2) + ' ft', x + 6, y - 6);
+      });
+      (L||[]).forEach(lp => {
+        if (!lp.ts || lp.ts < windowStart || lp.ts > windowEnd) return;
+        const x = mapX(lp.ts), y = mapY(lp.height);
+        ctx.fillStyle = '#9be7d9';
+        ctx.beginPath(); ctx.arc(x,y,4 * uiScale(),0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#9fb6c2';
+        ctx.font = `${11 * uiScale()}px system-ui`;
+        ctx.textAlign = 'left';
+        ctx.fillText(new Date(lp.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + ' L ' + (lp.height/0.3048).toFixed(2) + ' ft', x + 6, y + 14);
+      });
+
+      const nowX = mapX(now);
+      const clampedNowX = Math.max(originX, Math.min(originX + w, nowX));
+      ctx.strokeStyle = 'rgba(255,120,60,0.95)';
+      ctx.lineWidth = 1.6 * uiScale();
+      ctx.beginPath(); ctx.moveTo(clampedNowX, originY); ctx.lineTo(clampedNowX, originY + h); ctx.stroke();
+
+      const labelW = 56, labelH = 20;
+      const labelX = clampedNowX - labelW/2;
+      const labelY = originY - labelH - 8;
+      ctx.fillStyle = 'rgba(255,120,60,0.95)';
+      ctx.fillRect(labelX, labelY, labelW, labelH);
+      ctx.fillStyle = '#071018';
+      ctx.font = `${12 * uiScale()}px system-ui`;
+      ctx.textAlign = 'center';
+      ctx.fillText('Now', labelX + labelW/2, labelY + labelH/2 + 4);
+    });
+  }
+
+  // -------------------------
+  // Compass & gauge helpers
+  // -------------------------
+  function renderCompassTicks(){
+    const g = document.getElementById('compassTicks');
+    if (!g) return;
+    g.innerHTML = '';
+    for (let i=0;i<16;i++){
+      const angle = (i * 22.5) * Math.PI / 180;
+      const outerR = 44, innerR = (i % 4 === 0) ? 34 : 38;
+      const cx = 50, cy = 50;
+      const x1 = cx + Math.sin(angle) * innerR;
+      const y1 = cy - Math.cos(angle) * innerR;
+      const x2 = cx + Math.sin(angle) * outerR;
+      const y2 = cy - Math.cos(angle) * outerR;
+      const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1', x1.toFixed(2));
+      line.setAttribute('y1', y1.toFixed(2));
+      line.setAttribute('x2', x2.toFixed(2));
+      line.setAttribute('y2', y2.toFixed(2));
+      line.setAttribute('stroke', 'rgba(255,255,255,0.06)');
+      line.setAttribute('stroke-width', (i % 4 === 0) ? '1.6' : '1.0');
+      line.setAttribute('stroke-linecap', 'round');
+      g.appendChild(line);
+    }
+  }
+
+  function degToCardinal8(deg){
+    if (deg === null || deg === undefined || isNaN(deg)) return '—';
+    const d = (deg + 360) % 360;
+    const idx = Math.round(d / 45) % 8;
+    return ['N','NE','E','SE','S','SW','W','NW'][idx];
+  }
+
+function setCompassDirection(deg, speedMph, gustMph) {
+  const needleGroup = document.getElementById('needleGroup');
+  if (!needleGroup) return;
+
+  // Only rotate if deg is a real number
+  if (typeof deg === 'number' && isFinite(deg)) {
+    needleGroup.setAttribute('transform', `rotate(${deg} 50 50)`);
+  } else {
+    // Remove transform entirely when direction is invalid
+    needleGroup.removeAttribute('transform');
+  }
+
+
+
+  // Update wind speed inside compass
+  const speedText = document.getElementById('windSpeedText');
+  if (speedText) {
+    speedText.textContent =
+      isFinite(speedMph) ? `${Math.round(speedMph)} mph` : '—';
+  }
+
+  // Update gusts inside compass
+  const gustText = document.getElementById('windGustText');
+  if (gustText) {
+    gustText.textContent =
+      isFinite(gustMph) ? `Gust ${Math.round(gustMph)}` : '';
+  }
+}
+
+
+  function renderGaugeTicks(){
+    const ticks = document.getElementById('gaugeTicks');
+    if (!ticks) return;
+    ticks.innerHTML = '';
+    const marks = [1.0,0.75,0.5,0.25,0.0];
+    marks.forEach(m => {
+      const el = document.createElement('span');
+      el.style.fontSize = '11px';
+      el.style.color = getComputedStyle(document.documentElement).getPropertyValue('--muted');
+      el.textContent = m.toFixed(2) + ' in';
+      ticks.appendChild(el);
+    });
+  }
+
+  function updateRainGauge(rainIn){
+    const fill = document.getElementById('gaugeFill');
+    const amount = document.getElementById('gaugeAmount');
+    if (!fill || !amount) return;
+    const numeric = Number(rainIn) || 0;
+    const clamped = Math.max(0, Math.min(1, numeric));
+    const pct = clamped * 100;
+    fill.style.height = pct + '%';
+    amount.textContent = numeric.toFixed(2) + ' in';
+  }
+
+  // -------------------------
+  // Resample helper
+  // -------------------------
+  function resampleToWindow(samples, windowStart, windowEnd, pointsCount = 13){
+    if (!Array.isArray(samples) || !samples.length){
+      const now = Date.now();
+      const base = 50;
+      const out = [];
+      for (let i = pointsCount - 1; i >= 0; i--) out.push({ ts: now - i * ((windowEnd - windowStart) / (pointsCount - 1)), f: base });
+      return out;
+    }
+    const s = samples.slice().sort((a,b)=>a.ts-b.ts).map((p,i,arr)=>({ ts: i>0 && p.ts<=arr[i-1].ts ? arr[i-1].ts+1000 : p.ts, f: p.f }));
+    function interp(t){
+      if (t <= s[0].ts) return s[0].f;
+      if (t >= s[s.length-1].ts) return s[s.length-1].f;
+      let lo = 0, hi = s.length - 1;
+      while (hi - lo > 1){
+        const mid = Math.floor((lo + hi) / 2);
+        if (s[mid].ts <= t) lo = mid; else hi = mid;
+      }
+      const a = s[lo], b = s[hi];
+      const u = (t - a.ts) / (b.ts - a.ts);
+      return a.f + u * (b.f - a.f);
+    }
+    const out = [];
+    for (let i=0;i<pointsCount;i++){
+      const t = windowStart + (i / (pointsCount - 1)) * (windowEnd - windowStart);
+      out.push({ ts: Math.round(t), f: interp(t) });
+    }
+    return out;
+  }
+
+  // -------------------------
+  // Auto-align unit to top of digits
+  // -------------------------
+  function autoAlignTempUnit() {
+    const container = document.getElementById('airTemp');
+    const num = document.getElementById('airTempNum');
+    const unit = container ? container.querySelector('.tempUnit') : null;
+    if (!container || !num || !unit) return;
+
+    unit.style.transform = '';
+    const numRect = num.getBoundingClientRect();
+    const unitRect = unit.getBoundingClientRect();
+    const dy = numRect.top - unitRect.top;
+    const clamp = Math.max(-40, Math.min(40, Math.round(dy)));
+    unit.style.transform = `translateY(${clamp}px)`;
+    unit.style.lineHeight = '1';
+  }
+
+  // -------------------------
+  // Fetch and UI wiring
+  // -------------------------
+async function updateRightSide(data){
+  const pressureHpa = data.weather?.pressure_hpa ?? data.weather?.pressure_mb ?? null;
+  const pressureIn = (pressureHpa !== null && pressureHpa !== undefined)
+    ? (Number(pressureHpa) / 33.8638866667)
+    : null;
+
+  // Update pressure number immediately
+  const pressureValueEl = document.getElementById('pressureValue');
+  pressureValueEl.textContent = pressureIn !== null ? pressureIn.toFixed(2) : '—';
+
+  let deltaIn = null; // <-- define it here so we can use it later
+
+  // Compute trend
+  if (data.station && Array.isArray(data.station.history) && data.station.history.length >= 2){
+    const hist = data.station.history
+      .slice()
+      .map(h => ({
+        ts: toMs(h.ts ?? h.time ?? h.timestamp),
+        p: safeNum(h.pressure_hpa ?? h.pressure_mb)
+      }))
+      .filter(x => x.ts && x.p !== null)
+      .sort((a,b) => a.ts - b.ts);
+
+    if (hist.length >= 2){
+      const last = hist[hist.length-1];
+      const oneHourAgo = last.ts - 3600*1000;
+      let prev = hist[0];
+
+      for (let i = hist.length-1; i >= 0; i--){
+        if (hist[i].ts <= oneHourAgo){
+          prev = hist[i];
+          break;
+        }
+        prev = hist[i];
+      }
+
+      deltaIn = ((last.p - prev.p) / 33.8638866667);
+    }
+  }
+
+  // --- Update trend arrow UI ---
+  const trendEl = document.getElementById('pressureTrend');
+
+  if (deltaIn === null){
+    trendEl.textContent = '→';
+    trendEl.style.color = '#cccccc';
+  } else if (deltaIn > 0.01){
+    trendEl.textContent = '↑';
+    trendEl.style.color = '#4caf50';
+  } else if (deltaIn < -0.01){
+    trendEl.textContent = '↓';
+    trendEl.style.color = '#ff5252';
+  } else {
+    trendEl.textContent = '→';
+    trendEl.style.color = '#cccccc';
+  }
+
+  // --- Sunrise / Sunset (next event only) ---
+  const lat = data.station?.lat ?? data.location?.lat ?? FALLBACK_COORDS.lat;
+  const lon = data.station?.lon ?? data.location?.lon ?? FALLBACK_COORDS.lon;
+  const sun = await fetchSunTimes(lat, lon);
+
+  if (sun){
+    const now = new Date();
+    const sunrise = sun.sunrise;
+    const sunset = sun.sunset;
+
+    let nextEvent = null;
+    let nextLabel = '';
+    let nextIcon = '';
+
+    if (sunrise > now && sunset > now) {
+      nextEvent = sunrise < sunset ? sunrise : sunset;
+      nextLabel = sunrise < sunset ? 'Sunrise' : 'Sunset';
+      nextIcon = sunrise < sunset ? '🌅' : '🌇';
+    } else if (sunrise > now) {
+      nextEvent = sunrise;
+      nextLabel = 'Sunrise';
+      nextIcon = '🌅';
+    } else if (sunset > now) {
+      nextEvent = sunset;
+      nextLabel = 'Sunset';
+      nextIcon = '🌇';
+    } else {
+      nextEvent = sunrise;
+      nextLabel = 'Sunrise';
+      nextIcon = '🌅';
+    }
+
+document.getElementById('sunNextIcon').innerHTML =
+  nextLabel === 'Sunrise' ? sunriseSvg : sunsetSvg;
+
+
+
+    document.getElementById('sunNextTime').textContent =
+      nextEvent.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+  }
+
+  // --- Moon Phase ---
+  // --- Moon Phase ---
+const mp = getMoonPhase(new Date());
+document.getElementById('moonIcon').innerHTML = moonSvgBase;
+
+// Convert your 0–1 cycle (new→full→new) into lit fraction
+const phase = mp.fraction;
+const lit = phase <= 0.5 ? phase * 2 : (1 - phase) * 2;
+
+// Move shadow circle
+// Move shadow from center (new moon) to far right (full moon)
+const shadowX = 50 + lit * 120;  // 120 pushes it fully off the moon
+
+document.getElementById("moonShadowCircle").setAttribute("cx", shadowX);
+
+
+// Update label
+document.getElementById('moonLabel').textContent = mp.name;
+
+
+
+
+  // --- Humidity ---
+  if (data.weather && data.weather.humidity !== undefined && data.weather.humidity !== null) {
+
+    // Insert the SVG into the tile
+    document.getElementById('humidityIcon').innerHTML = humiditySvgBase;
+
+    const h = data.weather.humidity;  // 0–100
+
+    // Map humidity to a blue color
+    // 0% → transparent
+    // 100% → #4da6ff
+    const blue = `rgba(77, 166, 255, ${h/100})`;
+
+    // Color the droplet
+    document.getElementById('humidityDroplet').setAttribute('fill', blue);
+
+    // Update the percentage text
+    document.getElementById('humidityText').textContent = Math.round(h) + '%';
+  }
+
+
+
+}
+
+
+  async function fetchKiosk(){
+    try {
+      const res = await fetch(WORKER_URL.replace(/\/$/,'') + '/api/kiosk?cachebust=' + Math.floor(Math.random()*1e6));
+      if (!res.ok) throw new Error('Worker fetch failed: ' + res.status);
+      const data = await res.json();
+
+      window.__lastKioskData = data;
+      console.log('kiosk payload (saved to window.__lastKioskData):', data);
+      console.log('icon candidates:', data.weather?.icon, data.weather?.condition_icon, data.weather?.weather?.[0]?.icon, data.weather?.description);
+
+      setText('updatedText', new Date().toLocaleTimeString());
+      const w = data.weather || {};
+      let airTempFnum = null;
+      if (w.temp_c !== null && w.temp_c !== undefined) airTempFnum = cToF(w.temp_c);
+      else if (w.temp_f !== null && w.temp_f !== undefined) airTempFnum = Number(w.temp_f);
+      setText('airTempNum', airTempFnum !== null ? airTempFnum.toFixed(1) : '—');
+
+      const shortDesc = (w.summary || w.description || '') || '';
+      setText('conditionText', shortDesc || '—');
+
+      const feelsF = (w.feels_c !== null && w.feels_c !== undefined) ? cToF(w.feels_c) : (airTempFnum !== null ? airTempFnum : null);
+      const feelsEl = document.getElementById("feelsLikeUnder");
+if (feelsF !== null) {
+  feelsEl.textContent = `Feels like ${feelsF.toFixed(1)}°F`;
+} else {
+  feelsEl.textContent = "";
+}
+
+
+const iconCandidate = data.weather?.icon || data.weather?.icon_code || data.weather?.condition_icon || (data.weather?.weather && data.weather.weather[0] && data.weather.weather[0].icon) || null;
+
+let codeFromIcon = null;
+if (iconCandidate) {
+  switch (iconCandidate.slice(0,2)) {
+    case '01': codeFromIcon = 800; break;
+    case '02': codeFromIcon = 801; break;
+    case '03': codeFromIcon = 802; break;
+    case '04': codeFromIcon = 804; break;
+    case '09': codeFromIcon = 521; break;
+    case '10': codeFromIcon = 500; break;
+    case '11': codeFromIcon = 200; break;
+    case '13': codeFromIcon = 600; break;
+    case '50': codeFromIcon = 701; break;
+    default: codeFromIcon = null;
+  }
+}
+
+// Optional: apply inside a frame to avoid race overwrites
+requestAnimationFrame(() => setConditionIcon(codeFromIcon, iconCandidate));
+
+
+
+      const tempContainer = document.getElementById('airTemp');
+      if (airTempFnum !== null && !isNaN(airTempFnum) && tempContainer) {
+        let color = '#39a0ff';
+        if (airTempFnum >= 80) color = '#ff8c42';
+        else if (airTempFnum >= 55) color = '#2aa876';
+        else if (airTempFnum >= 33) color = '#6ec6ff';
+        tempContainer.style.color = color;
+      }
+
+// Wind speed (KPH → MPH)
+const windKph = w.wind_kph || w.wind_kph_avg || w.wind_kph_avg_10m || null;
+const windMphNum = isFinite(windKph) ? mphFromKph(windKph) : null;
+
+// Update speed number
+document.getElementById("windSpeedNumber").textContent =
+  isFinite(windMphNum) ? `${Math.round(windMphNum)}` : '—';
+
+// Update unit label
+document.getElementById("windSpeedUnit").textContent =
+  isFinite(windMphNum) ? `mph` : '';
+
+
+// Gusts (KPH → MPH)
+const gustKph = w.gust_kph || w.wind_gust_kph || null;
+const gustMphNum = isFinite(gustKph) ? mphFromKph(gustKph) : null;
+
+// Update gust text
+const gustEl = document.getElementById("windGustText");
+
+if (isFinite(gustMphNum) && isFinite(windMphNum) && gustMphNum > windMphNum) {
+  gustEl.textContent = `Gust ${Math.round(gustMphNum)}`;
+  gustEl.style.display = 'block';
+} else {
+  gustEl.textContent = '';
+  gustEl.style.display = 'none';
+}
+
+
+
+const dirDeg = (w.wind_dir_deg !== undefined && w.wind_dir_deg !== null)
+  ? Number(w.wind_dir_deg)
+  : null;
+
+setText('windDir', dirDeg !== null ? dirDeg + '°' : '—');
+
+// Only rotate needle + update history if direction is valid
+if (typeof dirDeg === 'number' && !isNaN(dirDeg)) {
+  setCompassDirection(dirDeg, windMphNum, gustMphNum);
+
+
+  // Store 120-minute history (24 samples)
+  windDirHistory.push(dirDeg % 360);
+  if (windDirHistory.length > 24) windDirHistory.shift();
+}
+
+// Update the density arc (safe even if history is empty)
+updateWindHistoryArc();
+
+
+      // Ocean / buoy: show swell only (ocean.swell_m), keep sea temp
+      const ocean = data.ocean || {};
+      if (ocean.swell_m !== null && ocean.swell_m !== undefined) {
+        setText('swellHeight', (ocean.swell_m / 0.3048).toFixed(1) + ' ft');
+      } else if (ocean.wave_height_m !== null && ocean.wave_height_m !== undefined) {
+        setText('swellHeight', (ocean.wave_height_m / 0.3048).toFixed(1) + ' ft');
+      } else {
+        setText('swellHeight', '—');
+      }
+      setText('waveSource', ocean.wave_source || ocean.source || '—');
+
+document.getElementById('swellPeriod').textContent =
+  `Period: ${ocean.wave_period_s.toFixed(1)} s`;
+
+
+
+      if (ocean.sea_temp_c !== null && ocean.sea_temp_c !== undefined) setText('seaTemp', cToF(ocean.sea_temp_c).toFixed(1) + '°F'); else setText('seaTemp','—');
+      setText('seaSource', ocean.sea_source || ocean.source || '—');
+
+      if (ocean.visibility_km !== null && ocean.visibility_km !== undefined) setText('visibility', (ocean.visibility_km / 1.60934).toFixed(1) + ' mi'); else setText('visibility','—');
+      setText('buoySource', ocean.visibility_source || ocean.source || '—');
+
+      const rainVal = (data.rain_today_in !== undefined) ? data.rain_today_in : (data.weather?.rain_mm_1h ? (data.weather.rain_mm_1h / 25.4) : 0);
+      updateRainGauge(rainVal || 0);
+
+// --- Moon Phase (local calculation) ---
+const moon = getMoonPhase(new Date());
+const moonIcons = ['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘'];
+
+document.getElementById('moonIcon').textContent = moonIcons[moon.index];
+document.getElementById('moonLabel').textContent = moon.name;
+
+
+
+      // Forecast list
+      const fl = document.getElementById('forecastList');
+      if (fl) fl.innerHTML = '';
+      const f = data.forecast || {};
+      if (f.daily && f.daily.length){
+        f.daily.forEach(d => {
+          const card = document.createElement('div');
+          card.className = 'fcard';
+          const date = new Date(d.date).toLocaleDateString([], {weekday:'short'});
+          const maxText = (d.max_c !== null && d.max_c !== undefined) ? Math.round(d.max_c * 9/5 + 32) + '°' : (d.temp_f ? Math.round(d.temp_f) + '°' : '—');
+          const minText = (d.min_c !== null && d.min_c !== undefined) ? Math.round(d.min_c * 9/5 + 32) + '°' : '—';
+          card.innerHTML = `<div style="font-weight:700">${date}</div><div class="mutedTiny">${d.summary || ''}</div><div style="height:6px"></div><div><strong>${maxText}</strong> / <span class="mutedTiny">${minText}</span></div>`;
+          fl.appendChild(card);
+        });
+      } else {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'fcard';
+        placeholder.innerHTML = `<div style="font-size:13px;color:var(--muted)">Forecast unavailable</div>`;
+        fl.appendChild(placeholder);
+      }
+
+      // Tides
+      const tides = data.tides || {};
+      const highs = tides.highs || [];
+      const lows = tides.lows || [];
+      const samplesArr = tides.samples || [];
+      let nextHL = '—';
+      const nowTs3 = Date.now();
+      const candidatesHL = [];
+      (highs||[]).forEach(h=>{ if (h.ts && toMs(h.ts) > nowTs3) candidatesHL.push({type:'H', ts:toMs(h.ts), height:h.height}); });
+      (lows||[]).forEach(l=>{ if (l.ts && toMs(l.ts) > nowTs3) candidatesHL.push({type:'L', ts:toMs(l.ts), height:l.height}); });
+      candidatesHL.sort((a,b)=>a.ts-b.ts);
+      if (candidatesHL.length){ const n = candidatesHL[0]; nextHL = `${new Date(n.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} ${n.type} ${(n.height/0.3048).toFixed(2)} ft`; }
+      setText('tideSummary','Next: ' + nextHL);
+
+      drawTideChart(samplesArr || [], highs || [], lows || [], tides.sunrise, tides.sunset);
+
+      // Temp sparkline
+      const nowTs = Date.now();
+      const tryArrays = [
+        (data.weather && Array.isArray(data.weather.observations)) ? data.weather.observations : null,
+        (data.weather && Array.isArray(data.weather.hourly)) ? data.weather.hourly : null,
+        (data.forecast && Array.isArray(data.forecast.hourly)) ? data.forecast.hourly : null,
+        (data.station && Array.isArray(data.station.history)) ? data.station.history : null
+      ];
+      function normalizeTs(v){ const n = safeNum(v); if (n === null) return null; return n < 1e12 ? n * 1000 : n; }
+      let chosenSamples = [];
+      for (const arr of tryArrays){
+        if (!arr || !arr.length) continue;
+        const s = [];
+        for (let i=0;i<arr.length;i++){
+          const item = arr[i];
+          const ts = normalizeTs(item.ts ?? item.time ?? item.timestamp);
+          if (!ts) continue;
+          let f = null;
+          if (safeNum(item.temp_f) !== null) f = safeNum(item.temp_f);
+          else if (safeNum(item.temp_c) !== null) f = safeNum(item.temp_c) * 9/5 + 32;
+          else if (safeNum(item.temp) !== null) f = safeNum(item.temp);
+          if (f === null) continue;
+          s.push({ ts, f: Number(f) });
+        }
+        if (s.length){ chosenSamples = s.sort((a,b)=>a.ts-b.ts); break; }
+      }
+      if (!chosenSamples.length && Array.isArray(data.forecast?.daily) && data.forecast.daily.length){
+        const daily = data.forecast.daily[0];
+        const currentC = (data.weather && safeNum(data.weather.temp_c) !== null) ? safeNum(data.weather.temp_c) : null;
+        const baseC = currentC !== null ? currentC : (safeNum(daily.min_c) !== null && safeNum(daily.max_c) !== null ? (safeNum(daily.min_c) + safeNum(daily.max_c)) / 2 : 10);
+        for (let i=24;i>=0;i--) chosenSamples.push({ ts: nowTs - i*3600*1000, f: baseC * 9/5 + 32 + (Math.random()-0.5)*1.5 });
+      }
+      if (!chosenSamples.length){
+        const curF = (data.weather && safeNum(data.weather.temp_f) !== null) ? safeNum(data.weather.temp_f) : null;
+        const curC = (data.weather && safeNum(data.weather.temp_c) !== null) ? safeNum(data.weather.temp_c) : null;
+        const baseF = curF !== null ? curF : (curC !== null ? curC * 9/5 + 32 : 50);
+        for (let i=24;i>=0;i--) chosenSamples.push({ ts: nowTs - i*3600*1000, f: baseF });
+      }
+      const windowStart = nowTs - 12 * 3600 * 1000;
+      const windowEnd = nowTs;
+      const resampled = resampleToWindow(chosenSamples, windowStart, windowEnd, 13);
+
+      setTimeout(() => { drawTempSparkline(resampled); autoAlignTempUnit(); }, 80);
+
+      await updateRightSide(data);
+
+    } catch (err) {
+      console.warn('fetchKiosk failed', err);
+      setText('updatedText','Error');
+    }
+  }
+
+  // -------------------------
+  // INIT
+  // -------------------------
+  window.addEventListener('load', () => {
+    renderGaugeTicks();
+    renderCompassTicks();
+    updateRainGauge(0);
+    setCompassDirection(null, null, null);
+    fetchKiosk();
+    setTimeout(() => { autoAlignTempUnit(); }, 250);
+    setInterval(fetchKiosk, 5 * 60 * 1000);
+  });
+  window.addEventListener('resize', () => { drawTempSparkline([]); autoAlignTempUnit(); });
+
+  </script>
+</body>
+</html>
