@@ -42,7 +42,8 @@ html,body{
   background: rgba(255,255,255,0.08);
   border-radius: 10px;
   padding: 10px;
-  min-height: 140px;
+  min-height: 0;
+  aspect-ratio: 1 / 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -50,8 +51,8 @@ html,body{
 }
 
 .cardIcon {
-  width: 64px;
-  height: 64px;
+  width: 80px;
+  height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -66,8 +67,8 @@ html,body{
 
 /* Ensure all SVGs scale consistently */
 .gridCard svg {
-  width: 64px;
-  height: 64px;
+  width: 80px;
+  height: 80px;
 }
 
 
@@ -80,8 +81,13 @@ html,body{
 }
 
 .pressureGauge {
-  width: 80px;
-  height: 80px;
+  width: 104px;
+  height: 104px;
+}
+
+.pressureCard .cardIcon {
+  width: 104px;
+  height: 104px;
 }
 
 .pressureRing {
@@ -92,19 +98,23 @@ html,body{
 
 .pressureValue {
   position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   font-size: 1.4rem;
   font-weight: 600;
   color: white;
 }
 
-.pressureTrend {
+.pressureTrendArrow {
   position: absolute;
-  margin-top: 48px;
-  font-size: 1.2rem;
-  font-weight: 600;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  display: none;
+  z-index: 1;
 }
-
-
 
 .sunCard {
   display: flex;
@@ -115,7 +125,20 @@ html,body{
 
 .sunIcon {
   font-size: 2rem;
-  margin-bottom: 4px;
+  margin-bottom: 0;
+}
+
+.sunCard .cardLabel {
+  margin-top: 0;
+}
+
+.moonCard .cardLabel {
+  margin-top: 2px;
+}
+
+.sunCard .sunIconSvg {
+  display: block;
+  margin-bottom: -6px;
 }
 
 .sunTime {
@@ -149,11 +172,8 @@ html,body{
 
 /* Group top row + sparkline so sparkline width = top row width */
 .topBlock{
-  display: grid;
-  grid-template-columns: max-content; /* column width = intrinsic width of topRowLimiter */
-  grid-auto-rows: auto;
-  align-items: start;
-  box-sizing: border-box;
+  display:flex;
+  width:100%;
 }
 
 /* Ensure left column aligns to start so topBlock controls sparkline width */
@@ -169,6 +189,7 @@ html,body{
 /* Sparkline fills the topBlock width (not the whole left column) */
 .sparkFull{
   width:100%;
+  min-width:100%;
   box-sizing:border-box;
 }
 
@@ -217,12 +238,14 @@ html,body{
   box-sizing:border-box;
 }
 
-/* Top row limiter (wraps the topRowItems only) */
+/* Top row limiter (wraps the topRowItems and sparkline) */
 .topRowLimiter{
-  display:flex;
+  display:inline-flex;
+  flex-direction:column;
   gap:12px;
-  align-items:center;
+  align-items:flex-start;
   justify-content:flex-start;
+  width:max-content;
   min-width:0;
   box-sizing:border-box;
 }
@@ -230,14 +253,47 @@ html,body{
 /* Top row inside left block: four items in a row */
 .topRowItems{
   display:flex;
-  gap:12px;
+  gap:16px;
   align-items:center;
   justify-content:flex-start;
   flex-wrap:nowrap;
   min-width:0;
   flex:0 1 auto;
-  width:auto;
+  width:max-content;
   box-sizing:border-box;
+}
+
+.conditionWrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 140px;
+  min-width:0;
+  padding:10px 8px;
+  gap:6px;
+  box-sizing:border-box;
+}
+
+.conditionIcon{
+  width:92px;
+  height:92px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.conditionIcon svg{
+  width:92px;
+  height:92px;
+}
+
+.conditionText{
+  text-align:center;
+  font-size:0.96rem;
+  line-height:1.2;
+  color:var(--text);
+  min-height:2.4rem;
 }
 
 /* Make each direct child of the top row shrinkable (prevents immovable blocks) */
@@ -326,7 +382,7 @@ html,body{
 .topGrid{
   display:grid;
   grid-template-columns:repeat(2,1fr);
-  grid-template-rows:repeat(2,1fr);
+  grid-auto-rows:1fr;
   gap:12px;
   width:100%;
   height:100%;
@@ -403,7 +459,10 @@ html,body{
   .windWrap,.rainWrap{flex:0 0 100px}
   .compassWrap{width:92px;height:92px}
   .miniCard{min-width:92px;padding:8px}
-  .conditionWrap{flex:0 0 84px}
+  .conditionWrap{flex:0 0 118px}
+  .conditionIcon{width:78px;height:78px}
+  .conditionIcon svg{width:78px;height:78px}
+  .conditionText{font-size:0.94rem;min-height:2.2rem}
   #conditionIconSvg{width:56px;height:56px}
 }
 
@@ -420,7 +479,10 @@ html,body{
   .tempWrap{min-width:180px}
   .compassWrap{width:80px;height:80px}
   .miniCard{min-width:84px;padding:8px}
-  .conditionWrap{flex:0 0 72px}
+  .conditionWrap{flex:0 0 96px}
+  .conditionIcon{width:64px;height:64px}
+  .conditionIcon svg{width:64px;height:64px}
+  .conditionText{font-size:0.88rem;min-height:2rem}
   #conditionIconSvg{width:48px;height:48px}
 }
 
@@ -798,9 +860,8 @@ html,body{
 
 
         <div class="pressureValue" id="pressureValue">—</div>
-        <div class="pressureTrend" id="pressureTrend">—</div>
+        <div class="pressureTrendArrow" id="pressureTrendArrow" aria-hidden="true"></div>
       </div>
-      <div class="cardLabel">Pressure</div>
     </div>
 
     <!-- Sunrise/Sunset -->
@@ -824,7 +885,6 @@ html,body{
       <div class="cardIcon">
         <div id="humidityIcon"></div>
       </div>
-      <div class="cardLabel">Humidity</div>
     </div>
 
   </div> <!-- /.topGrid -->
@@ -893,13 +953,13 @@ const sunriseSvg = `
       <stop offset="100%" stop-color="#FF8C3A"/>
     </linearGradient>
 
-    <!-- Mask to hide the LOWER part of the sun (sun rising) -->
+    <!-- Mask to hide the LOWER part of the sun so the visible half-circle sits above the horizon -->
     <clipPath id="sunriseClip">
-      <rect x="0" y="40" width="100" height="60" />
+      <rect x="0" y="0" width="100" height="40" />
     </clipPath>
   </defs>
 
-  <!-- Sun (large, clipped so bottom is hidden below horizon) -->
+  <!-- Sun (large, clipped so the upper half is visible above the horizon) -->
   <circle cx="50" cy="40" r="26"
           fill="url(#sunriseGrad)"
           clip-path="url(#sunriseClip)" />
@@ -998,7 +1058,7 @@ const humiditySvgBase = `
         x="50"
         y="70"
         text-anchor="middle"
-        font-size="32"
+        font-size="24"
         font-family="sans-serif"
         fill="white">--</text>
 
@@ -1047,6 +1107,7 @@ const moonSvgBase = `
 
 
 
+
  // -------------------------
   // OWM → ICON MAPPING
   // -------------------------
@@ -1088,6 +1149,161 @@ const moonSvgBase = `
 
     return 'icon-unknown';
   }
+
+/* ====== Unified icon mapper, inline SVG helper, and robust forecast renderer ====== */
+
+/* Map NWS and OpenWeather icon codes to sprite IDs */
+function mapNwsToIconId(code, isNightGuess = false) {
+  if (!code) return 'icon-unknown';
+  let s = String(code).toLowerCase().trim();
+  if (s.includes('?')) s = s.split('?')[0];
+  s = s.replace(/_/g,'-').replace(/\s+/g,'-');
+
+  if (s === 'skc') s = 'clear';
+  if (s === 'sunny') s = 'clear';
+
+  const owm = s.match(/^0?([0-9]{1,2})([dn])$/);
+  if (owm) {
+    const num = owm[1].padStart(2,'0');
+    const night = owm[2] === 'n';
+    switch(num) {
+      case '01': return night ? 'icon-clear-night' : 'icon-clear-day';
+      case '02': return night ? 'icon-few-clouds-night' : 'icon-few-clouds-day';
+      case '03': return 'icon-scattered-clouds';
+      case '04': return 'icon-broken-clouds';
+      case '09': return 'icon-drizzle';
+      case '10': return 'icon-rain';
+      case '11': return 'icon-thunder-rain';
+      case '13': return 'icon-snow';
+      case '50': return 'icon-mist';
+      default: return 'icon-unknown';
+    }
+  }
+
+  if (s === 'clear') return isNightGuess ? 'icon-clear-night' : 'icon-clear-day';
+  if (s === 'few' || s === 'sct' || s === 'few-clouds' || s === 'scattered') return isNightGuess ? 'icon-few-clouds-night' : 'icon-few-clouds-day';
+  if (s.includes('partly')) return isNightGuess ? 'icon-few-clouds-night' : 'icon-few-clouds-day';
+  if (s.includes('scattered-cloud')) return 'icon-scattered-clouds';
+  if (s.includes('broken') || s === 'bkn') return 'icon-broken-clouds';
+  if (s.includes('overcast') || s === 'ovc') return 'icon-overcast';
+  if (s.includes('drizzle')) return 'icon-drizzle';
+  if (s.includes('rain-showers') || s.includes('rain_showers') || s.includes('showers')) return 'icon-light-rain';
+  if (s.includes('shower') && s.includes('rain')) return 'icon-shower-rain';
+  if (s.includes('rain')) return 'icon-rain';
+  if (s.includes('heavy')) return 'icon-heavy-rain';
+  if (s.includes('sleet') || s.includes('ice')) return 'icon-sleet';
+  if (s.includes('mix') || s.includes('rain-snow')) return 'icon-rain-snow';
+  if (s.includes('snow')) return 'icon-snow';
+  if (s.includes('thunder') || s.includes('tsra') || s.includes('tstorm')) return s.includes('rain') ? 'icon-thunder-rain' : 'icon-thunder';
+  if (s.includes('mist')) return 'icon-mist';
+  if (s.includes('fog')) return 'icon-fog';
+  if (s.includes('haze')) return 'icon-haze';
+  if (s.includes('dust')) return 'icon-dust';
+  if (s.includes('smoke')) return 'icon-smoke';
+  if (s.includes('squall')) return 'icon-squall';
+  if (s.includes('tornado')) return 'icon-tornado';
+
+  return 'icon-unknown';
+}
+
+/* Backwards compatibility alias */
+window.mapOwmToIconId = window.mapOwmToIconId || function(code, iconStr) {
+  const isNight = typeof iconStr === 'string' && /n|night/i.test(iconStr);
+  return mapNwsToIconId(code, isNight);
+};
+
+/* Clone <symbol> contents into an inline SVG string */
+function getIconSvg(symbolId, opts = {}) {
+  if (!symbolId) return '';
+  const sym = document.getElementById(symbolId);
+  if (!sym) return '';
+  const vb = sym.getAttribute('viewBox') || sym.getAttribute('viewbox') || '0 0 24 24';
+  const width = opts.width || '26';
+  const height = opts.height || '26';
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox', vb);
+  svg.setAttribute('width', width);
+  svg.setAttribute('height', height);
+  svg.setAttribute('aria-hidden', 'true');
+  svg.innerHTML = sym.innerHTML;
+  const fillColor = opts.fill || svg.getAttribute('data-fill') || '#cfd8dc';
+  Array.from(svg.querySelectorAll('path,rect,circle,polygon,ellipse,line')).forEach(n=>{
+    if (!n.getAttribute('fill') && !n.getAttribute('stroke')) n.setAttribute('fill', fillColor);
+  });
+  return svg.outerHTML;
+}
+
+/* Find the best container to render forecast into:
+   1) #forecastBar if present
+   2) common ancestor of existing .forecastIcon nodes (keeps layout)
+   3) fallback to <main> or document.body */
+function findForecastContainer() {
+  const byId = document.getElementById('forecastBar');
+  if (byId) return byId;
+
+  const icons = Array.from(document.querySelectorAll('.forecastIcon, svg.forecastIcon'));
+  if (icons.length) {
+    // find common ancestor of the first and last icon
+    const first = icons[0].parentElement;
+    const last = icons[icons.length - 1].parentElement;
+    if (first && last) {
+      // if they share the same parent, use that parent
+      if (first === last) return first;
+      // otherwise use their nearest common ancestor
+      function ancestors(el) {
+        const a = [];
+        while (el) { a.push(el); el = el.parentElement; }
+        return a;
+      }
+      const a1 = ancestors(first);
+      const a2 = ancestors(last);
+      for (const node of a1) {
+        if (a2.includes(node)) return node;
+      }
+    }
+    // fallback to parent of first icon
+    if (first) return first;
+  }
+
+  return document.querySelector('main') || document.body;
+}
+
+/* Ensure forecast renders after DOM ready and when kiosk data arrives */
+(function initForecastRender() {
+  function tryRender() {
+    if (window.__lastKioskData && window.__lastKioskData.forecast) {
+      // If sprite symbols are not present, attempt a best-effort clone of any sprite into head
+      if (!document.getElementById('icon-clear-day')) {
+        const anySym = document.querySelector('svg symbol, symbol');
+        if (anySym) {
+          let top = anySym;
+          while (top && top.tagName && top.tagName.toLowerCase() !== 'svg') top = top.parentElement;
+          if (top) {
+            const clone = top.cloneNode(true);
+            clone.setAttribute('data-sprite-copied','true');
+            clone.style.display = 'none';
+            document.head.appendChild(clone);
+          }
+        }
+      }
+      try { renderForecast7(window.__lastKioskData.forecast); } catch(e){ console.warn('renderForecast7 error', e); }
+      return true;
+    }
+    return false;
+  }
+
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    if (!tryRender()) window.addEventListener('kioskDataReady', tryRender, { once: true });
+  } else {
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!tryRender()) window.addEventListener('kioskDataReady', tryRender, { once: true });
+    }, { once: true });
+  }
+})();
+
+
+
+
 
 function updateWindHistoryArc() {
   const arcGroup = document.getElementById("windHistoryArc");
@@ -1260,12 +1476,47 @@ function setConditionIcon(code, iconStr) {
   // Pressure trend helper
   // -------------------------
   function setPressureTrendIcon(elId, deltaInHg){
-    const el = document.getElementById(elId);
-    if (!el) return;
-    if (deltaInHg === null || deltaInHg === undefined) { el.textContent = '—'; el.title = 'Trend unknown'; el.style.color = 'var(--muted)'; return; }
-    if (Math.abs(deltaInHg) < 0.01) { el.textContent = '—'; el.title = 'Steady'; el.style.color = 'var(--muted)'; }
-    else if (deltaInHg > 0) { el.textContent = '▲'; el.title = 'Rising'; el.style.color = '#2aa876'; }
-    else { el.textContent = '▼'; el.title = 'Falling'; el.style.color = 'var(--danger)'; }
+    const arrow = document.getElementById(elId);
+    if (!arrow) return;
+    arrow.style.display = 'none';
+    arrow.style.borderTop = '';
+    arrow.style.borderBottom = '';
+    arrow.style.top = '';
+    arrow.style.bottom = '';
+    arrow.title = '';
+    arrow.setAttribute('aria-hidden', 'true');
+
+    if (deltaInHg === null || deltaInHg === undefined) {
+      arrow.setAttribute('aria-label', 'Trend unknown');
+      return;
+    }
+
+    if (Math.abs(deltaInHg) < 0.01) {
+      arrow.setAttribute('aria-label', 'Pressure steady');
+      return;
+    }
+
+    if (deltaInHg > 0) {
+      arrow.style.display = 'block';
+      arrow.style.borderLeft = '8px solid transparent';
+      arrow.style.borderRight = '8px solid transparent';
+      arrow.style.borderBottom = '14px solid #2aa876';
+      arrow.style.top = '36px';
+      arrow.style.bottom = '';
+      arrow.setAttribute('aria-label', 'Pressure rising');
+      arrow.setAttribute('aria-hidden', 'false');
+      arrow.title = 'Rising';
+    } else {
+      arrow.style.display = 'block';
+      arrow.style.borderLeft = '8px solid transparent';
+      arrow.style.borderRight = '8px solid transparent';
+      arrow.style.borderTop = '14px solid var(--danger)';
+      arrow.style.top = '66px';
+      arrow.style.bottom = '';
+      arrow.setAttribute('aria-label', 'Pressure falling');
+      arrow.setAttribute('aria-hidden', 'false');
+      arrow.title = 'Falling';
+    }
   }
 
   // -------------------------
@@ -1387,11 +1638,28 @@ function getMoonKeyword(phaseText) {
     ctx.lineWidth = Math.max(1, 2 * scale);
     ctx.stroke();
 
+    // x-axis time markings (exact hour values in 3-hour increments)
+    const hourMs = 60 * 60 * 1000;
+    const stepMs = 3 * hourMs;
+    const firstHour = Math.ceil(t0 / hourMs) * hourMs;
+    const firstTick = Math.ceil(firstHour / stepMs) * stepMs;
+    const ticks = [];
+    for (let ts = firstTick; ts <= t1; ts += stepMs) {
+      ticks.push(ts);
+      if (ticks.length >= 5) break;
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.82)';
+    ctx.font = `${10 * Math.max(1, scale)}px system-ui`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ticks.forEach(ts => {
+      const x = mapX(ts);
+      const label = new Date(ts).toLocaleTimeString([], { hour: 'numeric', hour12: true }).toLowerCase().replace(' ', '');
+      ctx.fillText(label, x, padY + h - 2);
+    });
+
     const last = points[points.length-1];
     const nowX = mapX(last.ts);
-    ctx.strokeStyle = 'rgba(255,140,66,0.95)';
-    ctx.lineWidth = Math.max(1, 1.5 * scale);
-    ctx.beginPath(); ctx.moveTo(nowX, padY); ctx.lineTo(nowX, padY + h); ctx.stroke();
 
     ctx.beginPath(); ctx.fillStyle = '#071018'; ctx.strokeStyle = '#2aa876'; ctx.lineWidth = Math.max(1, 1.2 * scale);
     ctx.arc(nowX, mapY(last.f), Math.max(2, 4 * scale), 0, Math.PI*2); ctx.fill(); ctx.stroke();
@@ -1569,6 +1837,8 @@ function getMoonKeyword(phaseText) {
       ctx.fillText('Now', labelX + labelW/2, labelY + labelH/2 + 4);
     });
   }
+
+
 
   // -------------------------
   // Compass & gauge helpers
@@ -1753,21 +2023,7 @@ async function updateRightSide(data){
   }
 
   // --- Update trend arrow UI ---
-  const trendEl = document.getElementById('pressureTrend');
-
-  if (deltaIn === null){
-    trendEl.textContent = '→';
-    trendEl.style.color = '#cccccc';
-  } else if (deltaIn > 0.01){
-    trendEl.textContent = '↑';
-    trendEl.style.color = '#4caf50';
-  } else if (deltaIn < -0.01){
-    trendEl.textContent = '↓';
-    trendEl.style.color = '#ff5252';
-  } else {
-    trendEl.textContent = '→';
-    trendEl.style.color = '#cccccc';
-  }
+  setPressureTrendIcon('pressureTrendArrow', deltaIn);
 
   // --- Sunrise / Sunset (next event only) ---
   const lat = data.station?.lat ?? data.location?.lat ?? FALLBACK_COORDS.lat;
@@ -1856,8 +2112,133 @@ document.getElementById('moonLabel').textContent = mp.name;
 
 }
 
+function mapForecastIconId(rawIcon, isNightGuess = false) {
+  if (!rawIcon) return 'icon-unknown';
+
+  let code = String(rawIcon).toLowerCase().trim();
+  if (code.includes('?')) code = code.split('?')[0];
+  code = code.replace(/_/g, '-').replace(/\s+/g, '-');
+
+  const owmMatch = code.match(/^0?([0-9]{1,2})([dn])$/);
+  if (owmMatch) {
+    const num = owmMatch[1].padStart(2, '0');
+    const night = owmMatch[2] === 'n';
+    switch (num) {
+      case '01': return night ? 'icon-clear-night' : 'icon-clear-day';
+      case '02': return night ? 'icon-few-clouds-night' : 'icon-few-clouds-day';
+      case '03': return 'icon-scattered-clouds';
+      case '04': return 'icon-broken-clouds';
+      case '09': return 'icon-drizzle';
+      case '10': return 'icon-rain';
+      case '11': return 'icon-thunder-rain';
+      case '13': return 'icon-snow';
+      case '50': return 'icon-mist';
+      default: return 'icon-unknown';
+    }
+  }
+
+  const explicitNight = /\bnight$|\bnight\b|n$/.test(code);
+  const night = explicitNight || isNightGuess;
+  if (code === 'skc' || code === 'sunny' || code === 'clear') return night ? 'icon-clear-night' : 'icon-clear-day';
+  if (code === 'few' || code === 'sct' || code === 'partly-cloudy' || code.includes('partly')) return night ? 'icon-few-clouds-night' : 'icon-few-clouds-day';
+  if (code.includes('scattered-cloud')) return 'icon-scattered-clouds';
+  if (code.includes('broken') || code === 'bkn') return 'icon-broken-clouds';
+  if (code.includes('overcast') || code === 'ovc') return 'icon-overcast';
+  if (code.includes('drizzle')) return 'icon-drizzle';
+  if (code.includes('rain-showers') || code.includes('rain_showers') || code.includes('showers')) return 'icon-light-rain';
+  if (code.includes('shower') && code.includes('rain')) return 'icon-shower-rain';
+  if (code.includes('rain')) return 'icon-rain';
+  if (code.includes('heavy')) return 'icon-heavy-rain';
+  if (code.includes('sleet') || code.includes('ice')) return 'icon-sleet';
+  if (code.includes('mix') || code.includes('rain-snow')) return 'icon-rain-snow';
+  if (code.includes('snow')) return 'icon-snow';
+  if (code.includes('thunder') || code.includes('tsra') || code.includes('tstorm')) return code.includes('rain') ? 'icon-thunder-rain' : 'icon-thunder';
+  if (code.includes('mist')) return 'icon-mist';
+  if (code.includes('fog')) return 'icon-fog';
+  if (code.includes('haze')) return 'icon-haze';
+  if (code.includes('dust')) return 'icon-dust';
+  if (code.includes('smoke')) return 'icon-smoke';
+  if (code.includes('squall')) return 'icon-squall';
+  if (code.includes('tornado')) return 'icon-tornado';
+
+  return 'icon-unknown';
+}
+
+function renderForecast7(forecast) {
+  const fl = document.getElementById('forecastList');
+  if (!fl) return;
+
+  fl.innerHTML = '';
+
+  const daily = (forecast && Array.isArray(forecast.daily))
+    ? forecast.daily.slice(0, 7)
+    : [];
+
+  if (!daily.length) {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'fcard';
+    placeholder.innerHTML = `<div style="font-size:13px;color:var(--muted)">Forecast unavailable</div>`;
+    fl.appendChild(placeholder);
+    return;
+  }
+
+  daily.forEach(d => {
+    const ts = d.dt || d.date || d.time || d.timestamp;
+    const weekday = ts
+      ? new Date(ts < 1e12 ? ts * 1000 : ts).toLocaleDateString([], { weekday: 'short' })
+      : '';
+
+    let maxF = null;
+    if (d.max != null) maxF = Math.round(d.max);
+    else if (d.max_c != null) maxF = Math.round(d.max_c * 9/5 + 32);
+
+    let minF = null;
+    if (d.min != null) minF = Math.round(d.min);
+    else if (d.min_c != null) minF = Math.round(d.min_c * 9/5 + 32);
+
+    const maxText = maxF != null ? `${maxF}°` : '—';
+    const minText = minF != null ? `${minF}°` : '—';
+
+    const forecastDate = ts ? new Date(ts < 1e12 ? ts * 1000 : ts) : null;
+    const now = new Date();
+    let isNightGuess = false;
+    if (forecastDate && forecastDate.toDateString() === now.toDateString()) {
+      const sunriseTs = window.__lastKioskData?.tides?.sunrise;
+      const sunsetTs = window.__lastKioskData?.tides?.sunset;
+      const sunrise = sunriseTs ? new Date(sunriseTs) : null;
+      const sunset = sunsetTs ? new Date(sunsetTs) : null;
+      if (sunrise && sunset) {
+        isNightGuess = now < sunrise || now >= sunset;
+      } else {
+        const hour = now.getHours();
+        isNightGuess = hour < 6 || hour >= 18;
+      }
+    }
+
+    const iconId = mapForecastIconId(d.icon, isNightGuess);
+    const iconSvg = getIconSvg(iconId, { width: '26', height: '26' }) || getIconSvg('icon-unknown', { width: '26', height: '26' });
+
+    const card = document.createElement('div');
+    card.className = 'fcard';
+    card.innerHTML = `
+      <div style="font-weight:700">${weekday}</div>
+      <div class="mutedTiny">${d.summary || ''}</div>
+      <div style="height:4px"></div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div class="forecastIcon">${iconSvg}</div>
+        <div>
+          <strong>${maxText}</strong>
+          <span class="mutedTiny"> / ${minText}</span>
+        </div>
+      </div>
+    `;
+    fl.appendChild(card);
+  });
+}
+
 
   async function fetchKiosk(){
+
     try {
       const res = await fetch(WORKER_URL.replace(/\/$/,'') + '/api/kiosk?cachebust=' + Math.floor(Math.random()*1e6));
       if (!res.ok) throw new Error('Worker fetch failed: ' + res.status);
@@ -2002,26 +2383,9 @@ document.getElementById('moonLabel').textContent = moon.name;
 
 
 
-      // Forecast list
-      const fl = document.getElementById('forecastList');
-      if (fl) fl.innerHTML = '';
-      const f = data.forecast || {};
-      if (f.daily && f.daily.length){
-        f.daily.forEach(d => {
-          const card = document.createElement('div');
-          card.className = 'fcard';
-          const date = new Date(d.date).toLocaleDateString([], {weekday:'short'});
-          const maxText = (d.max_c !== null && d.max_c !== undefined) ? Math.round(d.max_c * 9/5 + 32) + '°' : (d.temp_f ? Math.round(d.temp_f) + '°' : '—');
-          const minText = (d.min_c !== null && d.min_c !== undefined) ? Math.round(d.min_c * 9/5 + 32) + '°' : '—';
-          card.innerHTML = `<div style="font-weight:700">${date}</div><div class="mutedTiny">${d.summary || ''}</div><div style="height:6px"></div><div><strong>${maxText}</strong> / <span class="mutedTiny">${minText}</span></div>`;
-          fl.appendChild(card);
-        });
-      } else {
-        const placeholder = document.createElement('div');
-        placeholder.className = 'fcard';
-        placeholder.innerHTML = `<div style="font-size:13px;color:var(--muted)">Forecast unavailable</div>`;
-        fl.appendChild(placeholder);
-      }
+            // Forecast list (7‑day bar with icons)
+      renderForecast7(data.forecast);
+
 
       // Tides
       const tides = data.tides || {};
