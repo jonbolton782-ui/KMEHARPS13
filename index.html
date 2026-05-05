@@ -53,6 +53,7 @@ html,body{
 .cardIcon {
   width: 80px;
   height: 80px;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -80,14 +81,15 @@ html,body{
   justify-content: center;
 }
 
-.pressureGauge {
-  width: 104px;
-  height: 104px;
+/* Increased specificity to ensure size applies */
+.pressureCard .pressureGauge {
+  width: 118px;
+  height: 118px;
 }
 
 .pressureCard .cardIcon {
-  width: 104px;
-  height: 104px;
+  width: 118px;
+  height: 118px;
 }
 
 .pressureRing {
@@ -822,44 +824,11 @@ html,body{
     <div class="gridCard pressureCard">
       <div class="cardIcon">
 <svg class="pressureGauge" viewBox="0 0 100 100">
-
-  <!-- Major ticks (every 30°) -->
-  <g stroke="#ccc" stroke-width="3">
-    <line x1="50" y1="0"   x2="50" y2="12"/>
-    <line x1="85" y1="15"  x2="78" y2="25"/>
-    <line x1="100" y1="50" x2="88" y2="50"/>
-    <line x1="85" y1="85"  x2="78" y2="75"/>
-    <line x1="50" y1="100" x2="50" y2="88"/>
-    <line x1="15" y1="85"  x2="22" y2="75"/>
-    <line x1="0"  y1="50"  x2="12" y2="50"/>
-    <line x1="15" y1="15"  x2="22" y2="25"/>
-  </g>
-
-  <!-- Minor ticks (every 10°) -->
-  <g stroke="#999" stroke-width="1.5">
-    <line x1="50" y1="0"   x2="50" y2="8"/>
-    <line x1="68" y1="4"   x2="64" y2="12"/>
-    <line x1="84" y1="16"  x2="78" y2="22"/>
-    <line x1="96" y1="32"  x2="88" y2="36"/>
-    <line x1="100" y1="50" x2="92" y2="50"/>
-    <line x1="96" y1="68"  x2="88" y2="64"/>
-    <line x1="84" y1="84"  x2="78" y2="78"/>
-    <line x1="68" y1="96"  x2="64" y2="88"/>
-    <line x1="50" y1="100" x2="50" y2="92"/>
-    <line x1="32" y1="96"  x2="36" y2="88"/>
-    <line x1="16" y1="84"  x2="22" y2="78"/>
-    <line x1="4"  y1="68"  x2="12" y2="64"/>
-    <line x1="0"  y1="50"  x2="8"  y2="50"/>
-    <line x1="4"  y1="32"  x2="12" y2="36"/>
-    <line x1="16" y1="16"  x2="22" y2="22"/>
-    <line x1="32" y1="4"   x2="36" y2="12"/>
-  </g>
-
+  <g id="pressureTicks"></g>
 </svg>
-
-
-
         <div class="pressureValue" id="pressureValue">—</div>
+        <!-- Adjusted position to look single-spaced under the number -->
+        <div id="pressureSteadyText" style="position:absolute;top:61%;left:50%;transform:translateX(-50%);display:none;font-size:11px;color:rgba(255,255,255,0.75);font-weight:400;letter-spacing:0.02em">steady</div>
         <div class="pressureTrendArrow" id="pressureTrendArrow" aria-hidden="true"></div>
       </div>
     </div>
@@ -924,11 +893,10 @@ html,body{
     </div>
 
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-weight:700;font-size:16px">5‑Day Forecast</div>
-        <div class="mutedTiny">Updated <span id="updatedText">—</span></div>
-      </div>
       <div class="forecastRow" id="forecastList" aria-live="polite"></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:6px;padding-right:4px">
+      <div class="mutedTiny">Updated <span id="updatedText">—</span></div>
     </div>
   </div>
 
@@ -1312,7 +1280,7 @@ function updateWindHistoryArc() {
   arcGroup.innerHTML = "";
   if (!windDirHistory.length) return;
 
-  const bucketSize = 5;
+  const bucketSize = 10; // Granularity of the heatmap segments (10 degree buckets) - kept
   const bucketCount = 360 / bucketSize;
   const buckets = new Array(bucketCount).fill(0);
 
@@ -1321,21 +1289,23 @@ function updateWindHistoryArc() {
     buckets[idx]++;
   });
 
-  const maxCount = Math.max(...buckets, 1);
+  const threshold = 5; // Only render wedges if there are repeated readings (>= 2)
+  const maxCount = Math.max(...buckets, threshold);
   const cx = 50, cy = 50, r = 44;
 
   buckets.forEach((count, i) => {
-    if (count === 0) return;
+    if (count < threshold) return;
 
-    const start = i * bucketSize;
-    const end = start + bucketSize;
-    const density = count / maxCount;
+    const startAngle = i * bucketSize;
+    const endAngle = startAngle + bucketSize;
+    // Normalize density relative to the threshold for a better heatmap gradient
+    const density = (count - threshold) / (maxCount - threshold || 1);
 
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("d", describeArc(cx, cy, r, start, end));
-    path.setAttribute("stroke", `rgba(255,255,255,${0.05 + density * 0.25})`);
-    path.setAttribute("stroke-width", "3");
-    path.setAttribute("fill", "none");
+    path.setAttribute("d", describeWedge(cx, cy, r, startAngle, endAngle)); // Use new describeWedge function
+    // Shading based on frequency (density) to create heatmap effect using fill
+    path.setAttribute("fill", `rgba(255, 255, 255, ${0.02 + density * 0.13})`); // Range from 2% to 15% opacity
+    path.setAttribute("stroke", "none"); // No stroke for filled wedges
 
     arcGroup.appendChild(path);
   });
@@ -1349,13 +1319,25 @@ function polarToCartesian(cx, cy, r, angleDeg) {
   };
 }
 
-function describeArc(cx, cy, r, startAngle, endAngle) {
-  const start = polarToCartesian(cx, cy, r, endAngle);
-  const end = polarToCartesian(cx, cy, r, startAngle);
-  const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+/**
+ * Generates an SVG path string for a circular wedge (sector).
+ * @param {number} cx Center X coordinate.
+ * @param {number} cy Center Y coordinate.
+ * @param {number} r Radius of the arc.
+ * @param {number} startAngle Start angle in degrees (0 is North, increases clockwise).
+ * @param {number} endAngle End angle in degrees.
+ * @returns {string} SVG path data.
+ */
+function describeWedge(cx, cy, r, startAngle, endAngle) {
+  const start = polarToCartesian(cx, cy, r, startAngle);
+  const end = polarToCartesian(cx, cy, r, endAngle);
+  const largeArcFlag = (endAngle - startAngle) <= 180 ? "0" : "1";
+  const sweepFlag = "1"; // Always clockwise for a wedge
   return [
-    "M", start.x, start.y,
-    "A", r, r, 0, largeArcFlag, 0, end.x, end.y
+    "M", cx, cy, // Move to center
+    "L", start.x, start.y, // Line to the start of the arc
+    "A", r, r, 0, largeArcFlag, sweepFlag, end.x, end.y, // Arc segment
+    "Z" // Close path (draws line back to center)
   ].join(" ");
 }
 
@@ -1477,6 +1459,7 @@ function setConditionIcon(code, iconStr) {
   // -------------------------
   function setPressureTrendIcon(elId, deltaInHg){
     const arrow = document.getElementById(elId);
+    const steadyText = document.getElementById('pressureSteadyText');
     if (!arrow) return;
     arrow.style.display = 'none';
     arrow.style.borderTop = '';
@@ -1485,14 +1468,17 @@ function setConditionIcon(code, iconStr) {
     arrow.style.bottom = '';
     arrow.title = '';
     arrow.setAttribute('aria-hidden', 'true');
+    if (steadyText) steadyText.style.display = 'none';
 
     if (deltaInHg === null || deltaInHg === undefined) {
       arrow.setAttribute('aria-label', 'Trend unknown');
+      if (steadyText) steadyText.style.display = 'block'; // Show stdy as the default/waiting state
       return;
     }
 
     if (Math.abs(deltaInHg) < 0.01) {
       arrow.setAttribute('aria-label', 'Pressure steady');
+      if (steadyText) steadyText.style.display = 'block';
       return;
     }
 
@@ -1501,7 +1487,7 @@ function setConditionIcon(code, iconStr) {
       arrow.style.borderLeft = '8px solid transparent';
       arrow.style.borderRight = '8px solid transparent';
       arrow.style.borderBottom = '14px solid #2aa876';
-      arrow.style.top = '36px';
+      arrow.style.top = '40px';
       arrow.style.bottom = '';
       arrow.setAttribute('aria-label', 'Pressure rising');
       arrow.setAttribute('aria-hidden', 'false');
@@ -1511,7 +1497,7 @@ function setConditionIcon(code, iconStr) {
       arrow.style.borderLeft = '8px solid transparent';
       arrow.style.borderRight = '8px solid transparent';
       arrow.style.borderTop = '14px solid var(--danger)';
-      arrow.style.top = '66px';
+      arrow.style.top = '74px';
       arrow.style.bottom = '';
       arrow.setAttribute('aria-label', 'Pressure falling');
       arrow.setAttribute('aria-hidden', 'false');
@@ -1598,7 +1584,6 @@ function getMoonKeyword(phaseText) {
       ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#9fb6c2';
       ctx.font = '12px system-ui';
       ctx.fillText('No recent temps', 8, rect.height/2 + 4);
-      setText('sparkNow','Now —');
       setText('sparkRange','— / —');
       return;
     }
@@ -1607,13 +1592,23 @@ function getMoonKeyword(phaseText) {
     const vals = points.map(p => p.f);
     const minF = Math.min(...vals);
     const maxF = Math.max(...vals);
+    
+    // Apply minimum temperature range for better scaling
+    // This prevents small 1-2 degree changes from looking dramatic
+    const actualRange = maxF - minF;
+    const minRange = 12; // degrees F - minimum range to show on chart
+    const scaledRange = Math.max(actualRange, minRange);
+    const midpoint = (minF + maxF) / 2;
+    const scaledMin = midpoint - scaledRange / 2;
+    const scaledMax = midpoint + scaledRange / 2;
+    
     const padX = 6, padY = 6;
     const w = rect.width - padX*2;
     const h = rect.height - padY*2;
     const t0 = points[0].ts, t1 = points[points.length-1].ts;
     const denom = (t1 - t0) || 1;
     const mapX = ts => padX + ((ts - t0) / denom) * w;
-    const mapY = f => padY + (1 - (f - minF) / Math.max(1e-6, (maxF - minF))) * h;
+    const mapY = f => padY + (1 - (f - scaledMin) / (scaledMax - scaledMin)) * h;
 
     ctx.beginPath();
     points.forEach((p,i) => {
@@ -1664,7 +1659,6 @@ function getMoonKeyword(phaseText) {
     ctx.beginPath(); ctx.fillStyle = '#071018'; ctx.strokeStyle = '#2aa876'; ctx.lineWidth = Math.max(1, 1.2 * scale);
     ctx.arc(nowX, mapY(last.f), Math.max(2, 4 * scale), 0, Math.PI*2); ctx.fill(); ctx.stroke();
 
-    setText('sparkNow','Now ' + last.f.toFixed(1) + '°F');
     setText('sparkRange', minF.toFixed(1) + '°F / ' + maxF.toFixed(1) + '°F');
   }
 
@@ -1867,6 +1861,40 @@ function getMoonKeyword(phaseText) {
     }
   }
 
+  /**
+   * Dynamically renders pressure gauge ticks with a gap at the bottom.
+   */
+  function renderPressureTicks(){
+    const g = document.getElementById('pressureTicks');
+    if (!g) return;
+    g.innerHTML = '';
+    for (let angle = 0; angle < 360; angle += 5) {
+      // Skip the bottom section between 150° (5 PM) and 210° (7 PM)
+      if (angle > 150 && angle < 210) continue;
+
+      const isMajor = angle % 30 === 0;
+      const rad = (angle - 90) * Math.PI / 180; // 0 is top
+      const cx = 50, cy = 50;
+      const outerR = 48;
+      const innerR = isMajor ? 36 : 41;
+
+      const x1 = cx + Math.cos(rad) * outerR;
+      const y1 = cy + Math.sin(rad) * outerR;
+      const x2 = cx + Math.cos(rad) * innerR;
+      const y2 = cy + Math.sin(rad) * innerR;
+
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', x1.toFixed(2));
+      line.setAttribute('y1', y1.toFixed(2));
+      line.setAttribute('x2', x2.toFixed(2));
+      line.setAttribute('y2', y2.toFixed(2));
+      line.setAttribute('stroke', isMajor ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.25)');
+      line.setAttribute('stroke-width', isMajor ? '1.8' : '0.8');
+      line.setAttribute('stroke-linecap', 'round');
+      g.appendChild(line);
+    }
+  }
+
   function degToCardinal8(deg){
     if (deg === null || deg === undefined || isNaN(deg)) return '—';
     const d = (deg + 360) % 360;
@@ -1982,7 +2010,7 @@ function setCompassDirection(deg, speedMph, gustMph) {
   // -------------------------
   // Fetch and UI wiring
   // -------------------------
-async function updateRightSide(data){
+async function updateRightSide(data, historyData = null){
   const pressureHpa = data.weather?.pressure_hpa ?? data.weather?.pressure_mb ?? null;
   const pressureIn = (pressureHpa !== null && pressureHpa !== undefined)
     ? (Number(pressureHpa) / 33.8638866667)
@@ -1992,34 +2020,32 @@ async function updateRightSide(data){
   const pressureValueEl = document.getElementById('pressureValue');
   pressureValueEl.textContent = pressureIn !== null ? pressureIn.toFixed(2) : '—';
 
-  let deltaIn = null; // <-- define it here so we can use it later
+  let deltaIn = null;
 
-  // Compute trend
-  if (data.station && Array.isArray(data.station.history) && data.station.history.length >= 2){
-    const hist = data.station.history
-      .slice()
-      .map(h => ({
-        ts: toMs(h.ts ?? h.time ?? h.timestamp),
-        p: safeNum(h.pressure_hpa ?? h.pressure_mb)
-      }))
-      .filter(x => x.ts && x.p !== null)
-      .sort((a,b) => a.ts - b.ts);
+  // Compute trend using history API if available, fallback to station history
+  let trendPoints = [];
+  if (historyData && Array.isArray(historyData.pressure_last)) {
+    trendPoints = historyData.pressure_last.map(i => ({ ts: toMs(i.t), p: safeNum(i.p) }));
+  } else if (data.station && Array.isArray(data.station.history)) {
+    trendPoints = data.station.history.map(h => ({
+      ts: toMs(h.ts ?? h.time ?? h.timestamp),
+      p: safeNum(h.pressure_hpa ?? h.pressure_mb)
+    }));
+  }
 
-    if (hist.length >= 2){
-      const last = hist[hist.length-1];
-      const oneHourAgo = last.ts - 3600*1000;
-      let prev = hist[0];
+  const hist = trendPoints.filter(x => x.ts && x.p !== null).sort((a,b) => a.ts - b.ts);
 
-      for (let i = hist.length-1; i >= 0; i--){
-        if (hist[i].ts <= oneHourAgo){
-          prev = hist[i];
-          break;
-        }
+  if (hist.length >= 2) {
+    const last = hist[hist.length - 1];
+    const oneHourAgo = last.ts - 3600 * 1000;
+    let prev = hist[0];
+    for (let i = hist.length - 1; i >= 0; i--) {
+      if (hist[i].ts <= oneHourAgo) {
         prev = hist[i];
+        break;
       }
-
-      deltaIn = ((last.p - prev.p) / 33.8638866667);
     }
+    deltaIn = (last.p - prev.p) / 33.8638866667;
   }
 
   // --- Update trend arrow UI ---
@@ -2244,8 +2270,20 @@ function renderForecast7(forecast) {
       if (!res.ok) throw new Error('Worker fetch failed: ' + res.status);
       const data = await res.json();
 
+      // Fetch history data for sparkline
+      let historyData = null;
+      try {
+        const historyRes = await fetch(WORKER_URL.replace(/\/$/,'') + '/api/history?cachebust=' + Math.floor(Math.random()*1e6));
+        if (historyRes.ok) {
+          historyData = await historyRes.json();
+        }
+      } catch (historyErr) {
+        console.warn('History fetch failed:', historyErr);
+      }
+
       window.__lastKioskData = data;
       console.log('kiosk payload (saved to window.__lastKioskData):', data);
+      console.log('history payload:', historyData);
       console.log('icon candidates:', data.weather?.icon, data.weather?.condition_icon, data.weather?.weather?.[0]?.icon, data.weather?.description);
 
       setText('updatedText', new Date().toLocaleTimeString());
@@ -2335,17 +2373,28 @@ const dirDeg = (w.wind_dir_deg !== undefined && w.wind_dir_deg !== null)
 
 setText('windDir', dirDeg !== null ? dirDeg + '°' : '—');
 
-// Only rotate needle + update history if direction is valid
-if (typeof dirDeg === 'number' && !isNaN(dirDeg)) {
-  setCompassDirection(dirDeg, windMphNum, gustMphNum);
-
-
-  // Store 120-minute history (24 samples)
+// Update wind history from API if available (limited to last 2 hours)
+if (historyData && Array.isArray(historyData.wind_dir_last4h)) {
+  const twoHoursAgo = Math.floor(Date.now() / 1000) - (2 * 3600);
+  windDirHistory = historyData.wind_dir_last4h
+    .filter(item => Number(item.t) >= twoHoursAgo)
+    .map(item => Number(item.d))
+    .filter(d => !isNaN(d) && d >= 0);
+  console.log('Wind history updated from API (last 2h). Count:', windDirHistory.length, 'Data:', windDirHistory);
+} else if (typeof dirDeg === 'number' && !isNaN(dirDeg)) {
+  // Fallback: maintain local history if API data is missing (approx 2 hours at 5 min intervals)
   windDirHistory.push(dirDeg % 360);
   if (windDirHistory.length > 24) windDirHistory.shift();
+  console.log('Wind history updated locally (API data not available). Count:', windDirHistory.length);
+}
+
+// Update needle position
+if (typeof dirDeg === 'number' && !isNaN(dirDeg)) {
+  setCompassDirection(dirDeg, windMphNum, gustMphNum);
 }
 
 // Update the density arc (safe even if history is empty)
+console.log('Calling updateWindHistoryArc with windDirHistory (length:', windDirHistory.length, ')');
 updateWindHistoryArc();
 
 
@@ -2368,7 +2417,11 @@ document.getElementById('swellPeriod').textContent =
       if (ocean.sea_temp_c !== null && ocean.sea_temp_c !== undefined) setText('seaTemp', cToF(ocean.sea_temp_c).toFixed(1) + '°F'); else setText('seaTemp','—');
       setText('seaSource', ocean.sea_source || ocean.source || '—');
 
-      if (ocean.visibility_km !== null && ocean.visibility_km !== undefined) setText('visibility', (ocean.visibility_km / 1.60934).toFixed(1) + ' mi'); else setText('visibility','—');
+      if (ocean.visibility_km !== null && ocean.visibility_km !== undefined) {
+        const visMi = ocean.visibility_km / 1.60934;
+        const visLabel = visMi >= 10 ? '10+ mi' : `${visMi.toFixed(1)} mi`;
+        setText('visibility', visLabel);
+      } else setText('visibility','—');
       setText('buoySource', ocean.visibility_source || ocean.source || '—');
 
       const rainVal = (data.rain_today_in !== undefined) ? data.rain_today_in : (data.weather?.rain_mm_1h ? (data.weather.rain_mm_1h / 25.4) : 0);
@@ -2406,6 +2459,9 @@ document.getElementById('moonLabel').textContent = moon.name;
       // Temp sparkline
       const nowTs = Date.now();
       const tryArrays = [
+        // Priority 1: History API temperature data
+        (historyData && Array.isArray(historyData.temp_last12)) ? historyData.temp_last12.map(item => ({ ts: item.t, temp_c: item.c })) : null,
+        // Fallback sources
         (data.weather && Array.isArray(data.weather.observations)) ? data.weather.observations : null,
         (data.weather && Array.isArray(data.weather.hourly)) ? data.weather.hourly : null,
         (data.forecast && Array.isArray(data.forecast.hourly)) ? data.forecast.hourly : null,
@@ -2446,21 +2502,22 @@ document.getElementById('moonLabel').textContent = moon.name;
       const resampled = resampleToWindow(chosenSamples, windowStart, windowEnd, 13);
 
       setTimeout(() => { drawTempSparkline(resampled); autoAlignTempUnit(); }, 80);
+      console.log('Chosen samples for sparkline:', chosenSamples); // Log chosen samples for debugging
 
-      await updateRightSide(data);
+      await updateRightSide(data, historyData);
 
     } catch (err) {
       console.warn('fetchKiosk failed', err);
       setText('updatedText','Error');
     }
   }
-
   // -------------------------
   // INIT
   // -------------------------
   window.addEventListener('load', () => {
     renderGaugeTicks();
     renderCompassTicks();
+    renderPressureTicks();
     updateRainGauge(0);
     setCompassDirection(null, null, null);
     fetchKiosk();
