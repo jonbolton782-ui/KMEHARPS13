@@ -51,8 +51,8 @@ html,body{
 }
 
 .cardIcon {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   position: relative;
   display: flex;
   align-items: center;
@@ -68,8 +68,8 @@ html,body{
 
 /* Ensure all SVGs scale consistently */
 .gridCard svg {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
 }
 
 
@@ -79,17 +79,7 @@ html,body{
   flex-direction: column;
   align-items: center;
   justify-content: center;
-}
-
-/* Increased specificity to ensure size applies */
-.pressureCard .pressureGauge {
-  width: 118px;
-  height: 118px;
-}
-
-.pressureCard .cardIcon {
-  width: 118px;
-  height: 118px;
+  padding: 5px; /* Tighter padding to accommodate a larger gauge */
 }
 
 .pressureRing {
@@ -117,6 +107,19 @@ html,body{
   display: none;
   z-index: 1;
 }
+
+.pressureCard .cardIcon, .pressureCard svg {
+  width: 94px;
+  height: 94px;
+}
+
+.pressureTrendArrow[aria-label="Pressure rising"] {
+  top: 26px; /* Offset adjusted for 94px gauge */
+}
+.pressureTrendArrow[aria-label="Pressure falling"] {
+  top: 68px; /* Offset adjusted for 94px gauge */
+}
+
 
 .sunCard {
   display: flex;
@@ -197,7 +200,8 @@ html,body{
 
 
 .container{
-  max-width:1200px;
+  /* 952px total content width + 24px horizontal padding */
+  max-width: 976px;
   margin:14px auto;
   padding:12px;
   display:grid;
@@ -216,7 +220,10 @@ html,body{
 /* Top band: stable two-column layout using grid */
 .topBand{
   display:grid;
-  grid-template-columns: minmax(0, 1fr) 260px; /* left grows, right fixed by column */
+  /* Left column expands but caps at 720px to prevent huge gaps on wide screens */
+  /* Total content: 720 + 12 (gap) + 220 = 952px */
+  grid-template-columns: minmax(min-content, 720px) 220px;
+  justify-content: start;
   gap:12px;
   align-items:start;
   box-sizing:border-box;
@@ -368,6 +375,7 @@ html,body{
   align-items:center;
   padding:6px;
   box-sizing:border-box;
+  position:relative;
 }
 #tempSpark{width:100%;height:44px;display:block}
 
@@ -387,7 +395,6 @@ html,body{
   grid-auto-rows:1fr;
   gap:12px;
   width:100%;
-  height:100%;
   align-items:stretch;
   justify-items:stretch;
   box-sizing:border-box;
@@ -395,9 +402,9 @@ html,body{
 
 /* Wind / compass */
 .windWrap .miniCard{
-  background:none !important;
-  border:none !important;
-  box-shadow:none !important;
+  background:none !important; /* Keep this for transparent background */
+  border:none !important;     /* Keep this for no border */
+  box-shadow:none !important; /* Keep this for no shadow */
 }
 .compassWrap{width:150px;height:150px;position:relative;display:flex;align-items:center;justify-content:center}
 .compassSvg{width:150px;height:150px}
@@ -406,7 +413,7 @@ html,body{
 /* Rain gauge */
 #rainGauge{
   width:56px;
-  height:140px;
+  height:110px;
   border-radius:8px;
   position:relative;
   display:flex;
@@ -418,13 +425,51 @@ html,body{
 }
 #gaugeFill{
   position:absolute;
-  left:6px;
-  right:6px;
-  bottom:6px;
-  border-top-left-radius:6px;
-  border-top-right-radius:6px;
+  left:0;
+  right:0;
+  bottom:0;
+  border-top-left-radius:4px;
+  border-top-right-radius:4px;
   background:linear-gradient(180deg,#4fc3f7,#0288d1);
   height:0%;
+}
+/* Puddle effect at the base of the gauge */
+#rainGauge::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 8px;
+  right: 8px;
+  height: 6px;
+  background: #4fc3f7;
+  border-radius: 50%;
+  filter: blur(3px);
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 0 10px #4fc3f7;
+  transition: opacity 0.6s ease;
+  z-index: 1;
+}
+#rainGauge.is-overflowing::after {
+  opacity: 1;
+  animation: puddle-pulse 2s infinite ease-in-out;
+}
+.overflow-mark {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.9);
+  font-weight: 900;
+  font-size: 22px;
+  opacity: 0;
+  transition: opacity 0.5s;
+  z-index: 5;
+  text-shadow: 0 0 8px rgba(0,0,0,0.4);
+  pointer-events: none;
+}
+#rainGauge.is-overflowing .overflow-mark {
+  animation: warning-pulse 1.5s infinite ease-in-out;
 }
 
 /* Data list / cards */
@@ -438,9 +483,16 @@ html,body{
 .smallTime{font-size:13px;color:var(--muted)}
 
 /* Tides / forecast */
-.tideRow{display:flex;gap:12px;align-items:flex-start}
+.tideRow{
+  display:grid;
+  /* Total content: 800 + 12 (gap) + 140 = 952px (Matches topBand) */
+  grid-template-columns: minmax(min-content, 800px) 140px;
+  gap:12px;
+  align-items:start;
+  justify-content: start;
+}
 #tideCanvas{width:100%;height:260px;border-radius:8px;background:linear-gradient(180deg,#06282f,#04202a);display:block}
-.oceanStack{width:220px;display:flex;flex-direction:column;gap:10px}
+.tideCanvasWrap { min-width: 0; }
 .stackBox{padding:10px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(0,0,0,0.02));border:1px solid rgba(255,255,255,0.03);box-sizing:border-box}
 .forecastRow{display:flex;gap:10px;overflow-x:auto;padding-top:6px}
 .fcard{min-width:110px;padding:10px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(0,0,0,0.02));border:1px solid rgba(255,255,255,0.03);text-align:center;box-sizing:border-box}
@@ -456,13 +508,14 @@ html,body{
   #tideCanvas{height:200px}
 
   /* keep the right column consistent at this breakpoint */
-  .topBand{ grid-template-columns: minmax(0, 1fr) 260px; }
+  .topBand{ grid-template-columns: minmax(min-content, 720px) 220px; }
+  .tideRow{ grid-template-columns: minmax(min-content, 800px) 140px; }
 
   .windWrap,.rainWrap{flex:0 0 100px}
   .compassWrap{width:92px;height:92px}
   .miniCard{min-width:92px;padding:8px}
   .conditionWrap{flex:0 0 118px}
-  .conditionIcon{width:78px;height:78px}
+  .conditionIcon{width:80px;height:80px} /* Standardized to 80px */
   .conditionIcon svg{width:78px;height:78px}
   .conditionText{font-size:0.94rem;min-height:2.2rem}
   #conditionIconSvg{width:56px;height:56px}
@@ -475,13 +528,15 @@ html,body{
   #tideCanvas{height:170px}
 
   /* narrower right column on smaller screens */
-  .topBand{ grid-template-columns: minmax(0, 1fr) 220px; }
+  .topBand{ grid-template-columns: minmax(min-content, 720px) 180px; }
+  /* Aligning bottom right edge: 760 + 12 + 140 = 912 (matches 720 + 12 + 180) */
+  .tideRow{ grid-template-columns: minmax(min-content, 760px) 140px; }
 
   .windWrap,.rainWrap{flex:0 0 88px}
   .tempWrap{min-width:180px}
   .compassWrap{width:80px;height:80px}
   .miniCard{min-width:84px;padding:8px}
-  .conditionWrap{flex:0 0 96px}
+  .conditionWrap{flex:0 0 80px} /* Standardized to 80px */
   .conditionIcon{width:64px;height:64px}
   .conditionIcon svg{width:64px;height:64px}
   .conditionText{font-size:0.88rem;min-height:2rem}
@@ -495,6 +550,14 @@ html,body{
   .rightBand{width:100%}
 }
 
+@keyframes puddle-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.15); opacity: 0.9; }
+}
+@keyframes warning-pulse {
+  0%, 100% { opacity: 0.3; transform: translateX(-50%) scale(0.9); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+}
 .top
 </style>
 
@@ -767,13 +830,13 @@ html,body{
                   <g id="windHistoryArc"></g>
 
                   <!-- Wind speed number -->
-                  <text id="windSpeedNumber" x="50" y="42" text-anchor="middle" fill="white" font-size="18" font-weight="600"></text>
+                  <text id="windSpeedNumber" x="50" y="42" text-anchor="middle" fill="white" font-size="28" font-weight="600"></text>
 
                   <!-- Unit label -->
-                  <text id="windSpeedUnit" x="50" y="54" text-anchor="middle" fill="rgba(255,255,255,0.65)" font-size="8"></text>
+                  <text id="windSpeedUnit" x="50" y="54" text-anchor="middle" fill="rgba(255,255,255,0.65)" font-size="12"></text>
 
                   <!-- Gusts (shifted slightly lower) -->
-                  <text id="windGustText" x="50" y="68" text-anchor="middle" fill="rgba(255,255,255,0.65)" font-size="9"></text>
+                  <text id="windGustText" x="50" y="68" text-anchor="middle" fill="rgba(255,255,255,0.65)" font-size="14"></text>
 
                   <g id="needleGroup" transform="rotate(0 50 50)">
                     <polygon points="50,4 46,12 54,12" fill="#ff4d4d" />
@@ -786,10 +849,12 @@ html,body{
           <!-- rainWrap -->
           <div class="rainWrap">
             <div class="miniCard" aria-label="Rain">
-              <div class="miniLabel">Rain Today</div>
               <div id="rainGauge" aria-hidden="true">
-                <div id="gaugeFill" style="height:0%"></div>
-                <div id="gaugeTicks" style="position:absolute;left:0;right:0;top:6px;bottom:6px;display:flex;flex-direction:column;justify-content:space-between;padding:0 6px;pointer-events:none"></div>
+                <div class="overflow-mark">!</div>
+                <div style="position:absolute;left:6px;right:6px;top:6px;bottom:6px;">
+                  <div id="gaugeFill" style="height:0%"></div>
+                  <div id="gaugeTicks" style="position:absolute;top:0;bottom:0;left:0;right:0;pointer-events:none"></div>
+                </div>
               </div>
               <div class="gaugeAmount" id="gaugeAmount" style="margin-top:6px;font-weight:700">0.00 in</div>
             </div>
@@ -803,11 +868,8 @@ html,body{
   <!-- Sparkline sits directly under the top row and will match its width -->
   <div class="sparkFull" aria-hidden="false">
     <div class="sparkWrap" role="img" aria-label="Temperature sparkline">
+      <div class="mutedTiny" id="sparkRange" style="position:absolute;top:4px;left:8px;z-index:10;pointer-events:none">— / —</div>
       <canvas id="tempSpark"></canvas>
-    </div>
-    <div style="display:flex;gap:12px;margin-top:6px">
-      <div class="mutedTiny" id="sparkNow">Now —</div>
-      <div class="mutedTiny" id="sparkRange">— / —</div>
     </div>
   </div> <!-- /.sparkFull -->
 </div> <!-- /.topBlock -->
@@ -824,11 +886,12 @@ html,body{
     <div class="gridCard pressureCard">
       <div class="cardIcon">
 <svg class="pressureGauge" viewBox="0 0 100 100">
+  <line id="pressureNeedle" x1="50" y1="50" x2="50" y2="12" stroke="#ff4d4d" stroke-width="1.5" stroke-linecap="round" transform="rotate(240 50 50)" />
   <g id="pressureTicks"></g>
 </svg>
         <div class="pressureValue" id="pressureValue">—</div>
         <!-- Adjusted position to look single-spaced under the number -->
-        <div id="pressureSteadyText" style="position:absolute;top:61%;left:50%;transform:translateX(-50%);display:none;font-size:11px;color:rgba(255,255,255,0.75);font-weight:400;letter-spacing:0.02em">steady</div>
+        <div id="pressureSteadyText" style="position:absolute;top:60%;left:50%;transform:translateX(-50%);display:none;font-size:11px;color:rgba(255,255,255,0.75);font-weight:400;letter-spacing:0.02em">steady</div>
         <div class="pressureTrendArrow" id="pressureTrendArrow" aria-hidden="true"></div>
       </div>
     </div>
@@ -862,11 +925,8 @@ html,body{
 </div> <!-- /.topBand -->
 
 
-    <div class="card tideRow">
-      <div style="flex:1;min-width:0">
-        
-        <canvas id="tideCanvas" aria-label="Tide chart"></canvas>
-      </div>
+<div class="card tideRow">
+  <div class="tideCanvasWrap"><canvas id="tideCanvas" aria-label="Tide chart"></canvas></div>
 
       <div class="oceanStack">
 
@@ -1289,7 +1349,7 @@ function updateWindHistoryArc() {
     buckets[idx]++;
   });
 
-  const threshold = 5; // Only render wedges if there are repeated readings (>= 2)
+  const threshold = 3; // Only render wedges if there are repeated readings (>= 2)
   const maxCount = Math.max(...buckets, threshold);
   const cx = 50, cy = 50, r = 44;
 
@@ -1345,6 +1405,7 @@ function describeWedge(cx, cy, r, startAngle, endAngle) {
 
   // Wind direction history (120 minutes, 24 samples)
   let windDirHistory = []; 
+  let lastSparkPoints = []; 
 
 
   // -------------------------
@@ -1463,7 +1524,7 @@ function setConditionIcon(code, iconStr) {
     if (!arrow) return;
     arrow.style.display = 'none';
     arrow.style.borderTop = '';
-    arrow.style.borderBottom = '';
+    arrow.style.borderBottom = ''; // Reset border-bottom
     arrow.style.top = '';
     arrow.style.bottom = '';
     arrow.title = '';
@@ -1484,20 +1545,20 @@ function setConditionIcon(code, iconStr) {
 
     if (deltaInHg > 0) {
       arrow.style.display = 'block';
-      arrow.style.borderLeft = '8px solid transparent';
-      arrow.style.borderRight = '8px solid transparent';
-      arrow.style.borderBottom = '14px solid #2aa876';
-      arrow.style.top = '40px';
+      arrow.style.borderLeft = '6px solid transparent'; // Smaller arrow for smaller gauge
+      arrow.style.borderRight = '6px solid transparent'; // Smaller arrow for smaller gauge
+      arrow.style.borderBottom = '10px solid #2aa876'; // Smaller arrow for smaller gauge
+      arrow.style.top = '26px'; // Adjusted for 94px gauge
       arrow.style.bottom = '';
       arrow.setAttribute('aria-label', 'Pressure rising');
       arrow.setAttribute('aria-hidden', 'false');
       arrow.title = 'Rising';
     } else {
       arrow.style.display = 'block';
-      arrow.style.borderLeft = '8px solid transparent';
-      arrow.style.borderRight = '8px solid transparent';
-      arrow.style.borderTop = '14px solid var(--danger)';
-      arrow.style.top = '74px';
+      arrow.style.borderLeft = '6px solid transparent'; // Smaller arrow for smaller gauge
+      arrow.style.borderRight = '6px solid transparent'; // Smaller arrow for smaller gauge
+      arrow.style.borderTop = '10px solid var(--danger)'; // Smaller arrow for smaller gauge
+      arrow.style.top = '68px'; // Adjusted for 94px gauge
       arrow.style.bottom = '';
       arrow.setAttribute('aria-label', 'Pressure falling');
       arrow.setAttribute('aria-hidden', 'false');
@@ -1727,7 +1788,7 @@ function getMoonKeyword(phaseText) {
       const maxH = Math.max(...heights);
       const range = (maxH - minH) || 1;
 
-      const padLeft = 56, pad = 12, topOffset = 26;
+      const padLeft = 56, pad = 12, topOffset = 0;
       const w = rect.width - padLeft - pad;
       const h = rect.height - pad*2 - topOffset;
       const originX = padLeft, originY = pad + topOffset;
@@ -1819,16 +1880,6 @@ function getMoonKeyword(phaseText) {
       ctx.strokeStyle = 'rgba(255,120,60,0.95)';
       ctx.lineWidth = 1.6 * uiScale();
       ctx.beginPath(); ctx.moveTo(clampedNowX, originY); ctx.lineTo(clampedNowX, originY + h); ctx.stroke();
-
-      const labelW = 56, labelH = 20;
-      const labelX = clampedNowX - labelW/2;
-      const labelY = originY - labelH - 8;
-      ctx.fillStyle = 'rgba(255,120,60,0.95)';
-      ctx.fillRect(labelX, labelY, labelW, labelH);
-      ctx.fillStyle = '#071018';
-      ctx.font = `${12 * uiScale()}px system-ui`;
-      ctx.textAlign = 'center';
-      ctx.fillText('Now', labelX + labelW/2, labelY + labelH/2 + 4);
     });
   }
 
@@ -1862,18 +1913,24 @@ function getMoonKeyword(phaseText) {
   }
 
   /**
-   * Dynamically renders pressure gauge ticks with a gap at the bottom.
+   * Dynamically renders pressure gauge ticks from 28.0 to 31.0.
+   * Ticks span from 8 PM (240deg) to 4 PM (120deg) clockwise.
    */
   function renderPressureTicks(){
     const g = document.getElementById('pressureTicks');
     if (!g) return;
     g.innerHTML = '';
-    for (let angle = 0; angle < 360; angle += 5) {
-      // Skip the bottom section between 150° (5 PM) and 210° (7 PM)
-      if (angle > 150 && angle < 210) continue;
 
-      const isMajor = angle % 30 === 0;
-      const rad = (angle - 90) * Math.PI / 180; // 0 is top
+    const majorValues = [28, 28.5, 29, 29.5, 30, 30.5, 31];
+    
+    // Iterate from 28.0 to 31.0 in 0.1 increments
+    for (let p = 28.0; p <= 31.05; p += 0.1) {
+      const isMajor = majorValues.some(mv => Math.abs(mv - p) < 0.05);
+      
+      // Map 28-31 to 240deg through 360/0deg to 120deg (240 degree total span)
+      const angle = 240 + (p - 28) * 80;
+      const rad = (angle - 90) * Math.PI / 180;
+      
       const cx = 50, cy = 50;
       const outerR = 48;
       const innerR = isMajor ? 36 : 41;
@@ -1936,25 +1993,41 @@ function setCompassDirection(deg, speedMph, gustMph) {
     const ticks = document.getElementById('gaugeTicks');
     if (!ticks) return;
     ticks.innerHTML = '';
-    const marks = [1.0,0.75,0.5,0.25,0.0];
-    marks.forEach(m => {
-      const el = document.createElement('span');
-      el.style.fontSize = '11px';
-      el.style.color = getComputedStyle(document.documentElement).getPropertyValue('--muted');
-      el.textContent = m.toFixed(2) + ' in';
-      ticks.appendChild(el);
-    });
+
+    // Generate ticks from 0 to 1.0 inches in 0.05 increments
+    for (let i = 0; i <= 20; i++) {
+      const val = i * 0.05;
+      const isMajor = (i % 5 === 0); // Major ticks at 0, 0.25, 0.5, 0.75, 1.0
+      const tick = document.createElement('div');
+      tick.style.position = 'absolute';
+      tick.style.bottom = (val * 100) + '%';
+      tick.style.left = '0';
+      tick.style.height = '1px';
+      tick.style.width = isMajor ? '12px' : '6px';
+      tick.style.background = isMajor ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)';
+      ticks.appendChild(tick);
+    }
   }
 
   function updateRainGauge(rainIn){
+    const gauge = document.getElementById('rainGauge');
     const fill = document.getElementById('gaugeFill');
     const amount = document.getElementById('gaugeAmount');
-    if (!fill || !amount) return;
+    if (!fill || !amount || !gauge) return;
+
     const numeric = Number(rainIn) || 0;
     const clamped = Math.max(0, Math.min(1, numeric));
     const pct = clamped * 100;
+
     fill.style.height = pct + '%';
     amount.textContent = numeric.toFixed(2) + ' in';
+
+    // Toggle overflow visual state
+    if (numeric >= 1.0) {
+      gauge.classList.add('is-overflowing');
+    } else {
+      gauge.classList.remove('is-overflowing');
+    }
   }
 
   // -------------------------
@@ -2019,6 +2092,14 @@ async function updateRightSide(data, historyData = null){
   // Update pressure number immediately
   const pressureValueEl = document.getElementById('pressureValue');
   pressureValueEl.textContent = pressureIn !== null ? pressureIn.toFixed(2) : '—';
+
+  // Update pressure needle rotation
+  const needle = document.getElementById('pressureNeedle');
+  if (needle && pressureIn !== null) {
+    const clampedP = Math.max(28, Math.min(31, pressureIn));
+    const needleAngle = 240 + (clampedP - 28) * 80;
+    needle.setAttribute('transform', `rotate(${needleAngle} 50 50)`);
+  }
 
   let deltaIn = null;
 
@@ -2109,7 +2190,7 @@ document.getElementById("moonShadowCircle").setAttribute("cx", shadowX);
 
 
 // Update label
-document.getElementById('moonLabel').textContent = mp.name;
+document.getElementById('moonLabel').textContent = getMoonKeyword(mp.name);
 
 
 
@@ -2398,23 +2479,41 @@ console.log('Calling updateWindHistoryArc with windDirHistory (length:', windDir
 updateWindHistoryArc();
 
 
-      // Ocean / buoy: show swell only (ocean.swell_m), keep sea temp
+      // Ocean / buoy: show swell and sea temp with a 1-hour history fallback for missing (MM) readings
       const ocean = data.ocean || {};
-      if (ocean.swell_m !== null && ocean.swell_m !== undefined) {
-        setText('swellHeight', (ocean.swell_m / 0.3048).toFixed(1) + ' ft');
-      } else if (ocean.wave_height_m !== null && ocean.wave_height_m !== undefined) {
-        setText('swellHeight', (ocean.wave_height_m / 0.3048).toFixed(1) + ' ft');
-      } else {
-        setText('swellHeight', '—');
+      const hist = data.station?.history || [];
+      const now = Date.now();
+      const oneHour = 3600000;
+
+      const getBuoyVal = (curr, keys) => {
+        if (curr !== null && curr !== undefined) return curr;
+        if (!Array.isArray(hist)) return null;
+        // Iterate history from most recent to oldest
+        const recent = [...hist].sort((a,b) => toMs(b.ts || b.time || b.timestamp) - toMs(a.ts || a.time || a.timestamp));
+        for (const e of recent) {
+          const t = toMs(e.ts || e.time || e.timestamp);
+          if (!t || (now - t) > oneHour) continue;
+          for (const k of keys) {
+            const v = safeNum(e[k]);
+            if (v !== null) return v;
+          }
+        }
+        return null;
+      };
+
+      const swellH = getBuoyVal(ocean.swell_m, ['swell_m']);
+      setText('swellHeight', swellH !== null ? (swellH / 0.3048).toFixed(1) + ' ft' : '—');
+
+      const swellP = getBuoyVal(ocean.wave_period_s, ['wave_period_s']);
+      const pEl = document.getElementById('swellPeriod');
+      if (pEl) {
+        pEl.textContent = swellP !== null ? `Period: ${Number(swellP).toFixed(1)} s` : '—';
       }
+
       setText('waveSource', ocean.wave_source || ocean.source || '—');
 
-document.getElementById('swellPeriod').textContent =
-  `Period: ${ocean.wave_period_s.toFixed(1)} s`;
-
-
-
-      if (ocean.sea_temp_c !== null && ocean.sea_temp_c !== undefined) setText('seaTemp', cToF(ocean.sea_temp_c).toFixed(1) + '°F'); else setText('seaTemp','—');
+      const sTemp = getBuoyVal(ocean.sea_temp_c, ['sea_temp_c']);
+      setText('seaTemp', sTemp !== null ? cToF(sTemp).toFixed(1) + '°F' : '—');
       setText('seaSource', ocean.sea_source || ocean.source || '—');
 
       if (ocean.visibility_km !== null && ocean.visibility_km !== undefined) {
@@ -2432,7 +2531,7 @@ const moon = getMoonPhase(new Date());
 const moonIcons = ['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘'];
 
 document.getElementById('moonIcon').textContent = moonIcons[moon.index];
-document.getElementById('moonLabel').textContent = moon.name;
+document.getElementById('moonLabel').textContent = getMoonKeyword(moon.name);
 
 
 
@@ -2500,6 +2599,7 @@ document.getElementById('moonLabel').textContent = moon.name;
       const windowStart = nowTs - 12 * 3600 * 1000;
       const windowEnd = nowTs;
       const resampled = resampleToWindow(chosenSamples, windowStart, windowEnd, 13);
+      lastSparkPoints = resampled;
 
       setTimeout(() => { drawTempSparkline(resampled); autoAlignTempUnit(); }, 80);
       console.log('Chosen samples for sparkline:', chosenSamples); // Log chosen samples for debugging
@@ -2524,7 +2624,7 @@ document.getElementById('moonLabel').textContent = moon.name;
     setTimeout(() => { autoAlignTempUnit(); }, 250);
     setInterval(fetchKiosk, 5 * 60 * 1000);
   });
-  window.addEventListener('resize', () => { drawTempSparkline([]); autoAlignTempUnit(); });
+  window.addEventListener('resize', () => { drawTempSparkline(lastSparkPoints); autoAlignTempUnit(); });
 
   </script>
 </body>
