@@ -606,10 +606,9 @@ html,body{
 </symbol>
 
 <symbol id="icon-broken-clouds" viewBox="0 0 24 24">
-  <path d="M4 17a4 4 0 0 1 0-8 5 5 0 0 1 9.5 1.8A3.5 3.5 0 0 1 16 17H4z"
-        fill="#cfd8dc"/>
-  <path d="M10 11a3.5 3.5 0 0 1 6.8 1.3A2.8 2.8 0 0 1 19 15h-4"
-        fill="#cfd8dc"/>
+  <circle cx="15" cy="8" r="3" fill="#ffd166"/>
+  <path d="M3 18a3.5 3.5 0 0 1 0-7 4.5 4.5 0 0 1 8.5 1.5A3 3 0 0 1 14 18H3z" fill="#cfd8dc"/>
+  <path d="M10 13a2.5 2.5 0 0 1 0-5 3.5 3.5 0 0 1 6.5 1.2A2 2 0 0 1 18 13h-8" fill="#cfd8dc"/>
 </symbol>
 
 <symbol id="icon-overcast" viewBox="0 0 24 24">
@@ -861,7 +860,7 @@ html,body{
                   <div id="gaugeTicks" style="position:absolute;top:0;bottom:0;left:0;right:0;pointer-events:none"></div>
                 </div>
               </div>
-              <div class="gaugeAmount" id="gaugeAmount" style="margin-top:6px;font-weight:700">0.00 in</div>
+              <div class="gaugeAmount" id="gaugeAmount" style="margin-top:4px;font-weight:600;font-size:18px;font-family:system-ui,sans-serif">0.00"</div>
             </div>
           </div>
 
@@ -962,7 +961,7 @@ html,body{
       </div>
     </div>
 
-    <div class="card" style="padding:4px 12px">
+    <div class="card" style="padding:8px 16px">
       <div class="forecastRow" id="forecastList" aria-live="polite"></div>
     </div>
     <div style="display:flex;justify-content:flex-end;margin-top:6px;padding-right:4px">
@@ -1416,6 +1415,8 @@ function describeWedge(cx, cy, r, startAngle, endAngle) {
   // Wind direction history (120 minutes, 24 samples)
   let windDirHistory = []; 
   let lastSparkPoints = []; 
+  let lastSunrise = null;
+  let lastSunset = null;
 
 
   // -------------------------
@@ -1468,7 +1469,7 @@ function setConditionIcon(code, iconStr) {
     svg.innerHTML = sym.innerHTML;
 
     // ensure a visible fill color for all shapes
-    const fillColor = svg.getAttribute('data-fill') || '#071018';
+    const fillColor = svg.getAttribute('data-fill') || 'var(--text)';
     svg.style.fill = fillColor;
     Array.from(svg.querySelectorAll('path,rect,circle,polygon,ellipse,line')).forEach(n => {
       if (!n.getAttribute('fill')) n.setAttribute('fill', fillColor);
@@ -1640,7 +1641,7 @@ function getMoonKeyword(phaseText) {
   // -------------------------
   // Sparkline (DPR-aware)
   // -------------------------
-  function drawTempSparkline(points){
+  function drawTempSparkline(points, sunriseTs, sunsetTs){
     const canvas = document.getElementById('tempSpark');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -1680,6 +1681,25 @@ function getMoonKeyword(phaseText) {
     const denom = (t1 - t0) || 1;
     const mapX = ts => padX + ((ts - t0) / denom) * w;
     const mapY = f => padY + (1 - (f - scaledMin) / (scaledMax - scaledMin)) * h;
+
+    // Night Shading Overlay
+    if (sunriseTs && sunsetTs) {
+      const sMs = toMs(sunriseTs), setMs = toMs(sunsetTs);
+      if (sMs && setMs) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+        const day = 24 * 3600 * 1000;
+        for (let k = -2; k <= 2; k++) {
+          const ns = setMs + k * day, ne = sMs + (k + 1) * day;
+          const sN = Math.max(ns, t0), eN = Math.min(ne, t1);
+          if (eN > sN) {
+            const x1 = mapX(sN), x2 = mapX(eN);
+            ctx.fillRect(x1, 0, x2 - x1, rect.height);
+          }
+        }
+        ctx.restore();
+      }
+    }
 
     ctx.beginPath();
     points.forEach((p,i) => {
@@ -1754,9 +1774,8 @@ function getMoonKeyword(phaseText) {
       const L = Array.isArray(lows) ? lows.map(p => ({ ts: toMsLocal(p.ts), height: Number(p.height) })) : [];
 
       const now = Date.now();
-      const halfDay = 12 * 3600 * 1000;
-      const windowStart = now - halfDay;
-      const windowEnd = now + halfDay;
+      const windowStart = now - (8 * 3600 * 1000); // 8 hours past (1/3 of 24h)
+      const windowEnd = now + (16 * 3600 * 1000); // 16 hours future (2/3 of 24h)
 
       let pts = raw.filter(p => p.ts >= windowStart && p.ts <= windowEnd).sort((a,b)=>a.ts-b.ts);
 
@@ -1811,21 +1830,55 @@ function getMoonKeyword(phaseText) {
       const mapX = ts => originX + ((ts - windowStart) / (windowEnd - windowStart)) * w;
       const mapY = height => originY + h - ((height - paddedMinH) / paddedRange) * h;
 
-      // Night shading using sunrise/sunset
+      // Night shading and Watermarks
       (function(){
         const sMs = toMsLocal(sunriseTs), setMs = toMsLocal(sunsetTs);
         if (sMs && setMs){
           ctx.save();
-          ctx.fillStyle = 'rgba(6,18,30,0.70)';
           const day = 24*3600*1000;
           for (let k=-2;k<=2;k++){
-            const start = setMs + k*day;
-            const end = sMs + (k+1)*day;
-            const s = Math.max(start, windowStart);
-            const e = Math.min(end, windowEnd);
-            if (e > s){
-              const x1 = mapX(s), x2 = mapX(e);
+            // --- Night Blocks ---
+            const ns = setMs + k*day, ne = sMs + (k+1)*day;
+            const sN = Math.max(ns, windowStart), eN = Math.min(ne, windowEnd);
+            if (eN > sN){
+              const x1 = mapX(sN), x2 = mapX(eN);
+              ctx.fillStyle = 'rgba(6,18,30,0.70)';
               ctx.fillRect(Math.max(originX,x1), originY, Math.max(0, Math.min(originX+w,x2) - Math.max(originX,x1)), h);
+              
+              // Moon watermark
+              const cx = mapX((sN + eN) / 2);
+              const cy = originY + h / 2;
+              const r = 35 * uiScale();
+              ctx.save();
+              ctx.translate(cx, cy);
+              ctx.fillStyle = 'rgba(255,255,255,0.05)';
+              ctx.beginPath();
+              ctx.arc(0, 0, r, 0.5 * Math.PI, 1.5 * Math.PI);
+              ctx.arc(r * 0.6, 0, r, 1.5 * Math.PI, 0.5 * Math.PI, true);
+              ctx.fill();
+              ctx.restore();
+            }
+
+            // --- Day Blocks ---
+            const ds = sMs + k*day, de = setMs + k*day;
+            const sD = Math.max(ds, windowStart), eD = Math.min(de, windowEnd);
+            if (eD > sD) {
+              // Sun watermark
+              const cx = mapX((sD + eD) / 2);
+              const cy = originY + h / 2;
+              const r = 30 * uiScale();
+              ctx.save();
+              ctx.translate(cx, cy);
+              ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+              ctx.lineWidth = 2 * uiScale();
+              ctx.beginPath(); ctx.arc(0, 0, r * 0.4, 0, Math.PI * 2); ctx.stroke();
+              for (let i = 0; i < 8; i++) {
+                ctx.rotate(Math.PI / 4);
+                ctx.beginPath();
+                ctx.moveTo(r * 0.55, 0); ctx.lineTo(r * 0.85, 0);
+                ctx.stroke();
+              }
+              ctx.restore();
             }
           }
           ctx.restore();
@@ -1853,7 +1906,7 @@ function getMoonKeyword(phaseText) {
         if (idx===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
       });
       ctx.strokeStyle = 'rgba(120,210,200,0.98)';
-      ctx.lineWidth = 3 * uiScale();
+      ctx.lineWidth = 5 * uiScale();
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
       ctx.stroke();
@@ -1868,9 +1921,9 @@ function getMoonKeyword(phaseText) {
         if (!hp.ts || hp.ts < windowStart || hp.ts > windowEnd) return;
         const x = mapX(hp.ts), y = mapY(hp.height);
         ctx.fillStyle = '#ffd166';
-        ctx.beginPath(); ctx.arc(x,y,4 * uiScale(),0,Math.PI*2); ctx.fill();
-        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#9fb6c2';
-        ctx.font = `${11 * uiScale()}px system-ui`;
+        ctx.beginPath(); ctx.arc(x,y,5 * uiScale(),0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.9)'; /* Increased visibility */
+        ctx.font = `${16 * uiScale()}px system-ui`; /* Increased font size */
         ctx.textAlign = 'left';
         ctx.fillText(new Date(hp.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + ' H ' + (hp.height/0.3048).toFixed(2) + ' ft', x + 6, y - 6);
       });
@@ -1878,9 +1931,9 @@ function getMoonKeyword(phaseText) {
         if (!lp.ts || lp.ts < windowStart || lp.ts > windowEnd) return;
         const x = mapX(lp.ts), y = mapY(lp.height);
         ctx.fillStyle = '#9be7d9';
-        ctx.beginPath(); ctx.arc(x,y,4 * uiScale(),0,Math.PI*2); ctx.fill();
-        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#9fb6c2';
-        ctx.font = `${11 * uiScale()}px system-ui`;
+        ctx.beginPath(); ctx.arc(x,y,5 * uiScale(),0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.9)'; /* Increased visibility */
+        ctx.font = `${16 * uiScale()}px system-ui`; /* Increased font size */
         ctx.textAlign = 'left';
         ctx.fillText(new Date(lp.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + ' L ' + (lp.height/0.3048).toFixed(2) + ' ft', x + 6, y + 14);
       });
@@ -2030,7 +2083,7 @@ function setCompassDirection(deg, speedMph, gustMph) {
     const pct = clamped * 100;
 
     fill.style.height = pct + '%';
-    amount.textContent = numeric.toFixed(2) + ' in';
+    amount.textContent = numeric.toFixed(2) + '"';
 
     // Toggle overflow visual state
     if (numeric >= 1.0) {
@@ -2333,15 +2386,15 @@ function renderForecast7(forecast) {
     }
 
     const iconId = mapForecastIconId(d.icon, isNightGuess);
-    const iconSvg = getIconSvg(iconId, { width: '22', height: '22' }) || getIconSvg('icon-unknown', { width: '22', height: '22' });
+    const iconSvg = getIconSvg(iconId, { width: '28', height: '28' }) || getIconSvg('icon-unknown', { width: '28', height: '28' });
 
     const card = document.createElement('div');
     card.className = 'fcard';
     card.innerHTML = `
-      <div style="font-weight:700;font-size:12px;margin-right:6px">${weekday}</div>
-      <div class="forecastIcon" style="display:flex;align-items:center;margin-right:4px">${iconSvg}</div>
-      <div style="font-size:12px">
-        <strong>${maxText}</strong><span style="font-size:10px;opacity:0.7">/${minText}</span>
+      <div style="font-weight:700;font-size:14px;margin-right:10px">${weekday}</div>
+      <div class="forecastIcon" style="display:flex;align-items:center;margin-right:6px">${iconSvg}</div>
+      <div style="font-size:15px">
+        <strong>${maxText}</strong><span style="font-size:12px;opacity:0.7">/${minText}</span>
       </div>
     `;
     fl.appendChild(card);
@@ -2399,7 +2452,7 @@ if (iconCandidate) {
     case '01': codeFromIcon = 800; break;
     case '02': codeFromIcon = 801; break;
     case '03': codeFromIcon = 802; break;
-    case '04': codeFromIcon = 804; break;
+    case '04': codeFromIcon = 803; break;
     case '09': codeFromIcon = 521; break;
     case '10': codeFromIcon = 500; break;
     case '11': codeFromIcon = 200; break;
@@ -2418,7 +2471,7 @@ requestAnimationFrame(() => setConditionIcon(codeFromIcon, iconCandidate));
       if (airTempFnum !== null && !isNaN(airTempFnum) && tempContainer) {
         let color = '#39a0ff';
         if (airTempFnum >= 80) color = '#ff8c42';
-        else if (airTempFnum >= 55) color = '#2aa876';
+        else if (airTempFnum >= 40) color = '#2aa876';
         else if (airTempFnum >= 33) color = '#6ec6ff';
         tempContainer.style.color = color;
       }
@@ -2546,6 +2599,8 @@ document.getElementById('moonLabel').textContent = getMoonKeyword(moon.name);
 
       // Tides
       const tides = data.tides || {};
+      lastSunrise = tides.sunrise;
+      lastSunset = tides.sunset;
       const highs = tides.highs || [];
       const lows = tides.lows || [];
       const samplesArr = tides.samples || [];
@@ -2606,7 +2661,7 @@ document.getElementById('moonLabel').textContent = getMoonKeyword(moon.name);
       const resampled = resampleToWindow(chosenSamples, windowStart, windowEnd, 13);
       lastSparkPoints = resampled;
 
-      setTimeout(() => { drawTempSparkline(resampled); autoAlignTempUnit(); }, 80);
+      setTimeout(() => { drawTempSparkline(resampled, lastSunrise, lastSunset); autoAlignTempUnit(); }, 80);
       console.log('Chosen samples for sparkline:', chosenSamples); // Log chosen samples for debugging
 
       await updateRightSide(data, historyData);
@@ -2629,7 +2684,7 @@ document.getElementById('moonLabel').textContent = getMoonKeyword(moon.name);
     setTimeout(() => { autoAlignTempUnit(); }, 250);
     setInterval(fetchKiosk, 5 * 60 * 1000);
   });
-  window.addEventListener('resize', () => { drawTempSparkline(lastSparkPoints); autoAlignTempUnit(); });
+  window.addEventListener('resize', () => { drawTempSparkline(lastSparkPoints, lastSunrise, lastSunset); autoAlignTempUnit(); });
 
   </script>
 </body>
