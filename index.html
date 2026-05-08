@@ -600,17 +600,14 @@ html,body{
 </symbol>
 
 <!-- FEW CLOUDS -->
-<symbol id="icon-few-clouds-day" viewBox="0 0 24 24">
-  <circle cx="7" cy="8" r="3" fill="#ffd166"/>
-  <path d="M6 17a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 17H6z"
-        fill="#cfd8dc"/>
+<symbol id="icon-few-clouds-day" viewBox="0 0 24 24"> <!-- Day: Large sun, small cloud bottom-right -->
+  <circle cx="10" cy="9" r="5" fill="#ffd166"/>
+  <path d="M13 18a2.5 2.5 0 0 1 0-5 3.5 3.5 0 0 1 6.5 1.1A2 2 0 0 1 22 16.5 2 2 0 0 1 20 18.5h-7" fill="#cfd8dc"/>
 </symbol>
 
-<symbol id="icon-few-clouds-night" viewBox="0 0 24 24">
-  <path d="M9 6a4.5 4.5 0 1 0 4 7.5A5.5 5.5 0 0 1 9 6z"
-        fill="#b0c4de"/>
-  <path d="M6 18a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 18H6z"
-        fill="#cfd8dc"/>
+<symbol id="icon-few-clouds-night" viewBox="0 0 24 24"> <!-- Night: Large moon, small cloud bottom-right -->
+  <path d="M10 5a5.5 5.5 0 1 0 4 9.5A6.5 6.5 0 0 1 10 5z" fill="#b0c4de"/>
+  <path d="M13 19a2.5 2.5 0 0 1 0-5 3.5 3.5 0 0 1 6.5 1.1A2 2 0 0 1 22 17.5 2 2 0 0 1 20 19.5h-7" fill="#cfd8dc"/>
 </symbol>
 
 <!-- CLOUDS -->
@@ -1936,6 +1933,7 @@ function getMoonKeyword(phaseText) {
       })();
 
       ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
       ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#9fb6c2';
       ctx.font = '12px system-ui';
       ctx.textAlign = 'right';
@@ -1987,6 +1985,35 @@ function getMoonKeyword(phaseText) {
         ctx.textAlign = 'left';
         ctx.fillText(new Date(lp.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + ' L ' + (lp.height/0.3048).toFixed(2) + ' ft', x + 6, y + 14);
       });
+
+      // --- Time Grid Lines (12am, 6am, 12pm, 6pm) ---
+      const tickHrs = [0, 6, 12, 18];
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.font = `${10 * uiScale()}px system-ui`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      
+      let tIter = new Date(windowStart);
+      tIter.setMinutes(0, 0, 0); // Start at the beginning of the current hour
+      
+      for (let i = 0; i <= 26; i++) {
+        const ts = tIter.getTime();
+        if (ts >= windowStart && ts <= windowEnd && tickHrs.includes(tIter.getHours())) {
+          const x = mapX(ts);
+          const hrs = tIter.getHours();
+          const label = hrs === 0 ? '12am' : hrs === 12 ? '12pm' : (hrs < 12 ? hrs + 'am' : (hrs - 12) + 'pm');
+          ctx.beginPath();
+          ctx.moveTo(x, originY);
+          ctx.lineTo(x, originY + h);
+          ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.fillText(label, x, rect.height - 2);
+        }
+        tIter.setHours(tIter.getHours() + 1);
+      }
+      ctx.restore();
 
       const nowX = mapX(now);
       const clampedNowX = Math.max(originX, Math.min(originX + w, nowX));
