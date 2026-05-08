@@ -563,6 +563,19 @@ html,body{
   0%, 100% { opacity: 0.3; transform: translateX(-50%) scale(0.9); }
   50% { opacity: 1; transform: translateX(-50%) scale(1.1); }
 }
+@keyframes storm-pulse {
+  0% { transform: translateX(-50%) scale(1); opacity: 1; }
+  50% { transform: translateX(-50%) scale(1.2); opacity: 0.7; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+@keyframes box-storm-pulse {
+  0%, 100% { background: rgba(255,255,255,0.08); }
+  50% { background: rgba(255, 107, 107, 0.25); }
+}
+.pressureCard.is-storm-alert {
+  animation: box-storm-pulse 2s infinite ease-in-out;
+  border: 1px solid var(--danger) !important;
+}
 .top
 </style>
 
@@ -771,6 +784,29 @@ html,body{
         fill="none" stroke="#b0bec5" stroke-width="1.8" stroke-linecap="round"/>
 </symbol>
 
+<!-- OCEAN STACK ICONS (Redesigned for realism and impact) -->
+<symbol id="icon-sea-temp" viewBox="0 0 24 24">
+  <path d="M7 15.5V4a1.5 1.5 0 1 0-3 0v11.5a3 3 0 1 0 3 0z" fill="none" stroke="#9fb6c2" stroke-width="1.2"/>
+  <path d="M5.5 17.5a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4z M5.5 18V8" stroke="#ff8c42" stroke-width="2.5" stroke-linecap="round" fill="#ff8c42"/>
+  <path d="M12 11c1.5 0 1.5 2 3 2s1.5-2 3-2 1.5 2 3 2" fill="none" stroke="#4fc3f7" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M12 15c1.5 0 1.5 2 3 2s1.5-2 3-2 1.5 2 3 2" fill="none" stroke="#4fc3f7" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+</symbol>
+
+<symbol id="icon-curling-wave" viewBox="0 0 24 24">
+  <!-- Detailed Hokusai-style Breaking Wave -->
+  <path d="M2 21c5 0 7-16 16-16 3.5 0 4.5 3 4.5 6 0 4-4 5-4 1.5 0-3 2-3 2-2s-1-2-2.5-2c-4 0-6 11-10 11" fill="#0288d1"/>
+  <circle cx="18" cy="5" r="1.5" fill="#fff"/>
+  <circle cx="21" cy="6.5" r="1.2" fill="#fff" opacity="0.8"/>
+  <circle cx="22.5" cy="9.5" r="1" fill="#fff" opacity="0.6"/>
+  <path d="M5 19c3-1 5-6 6-11" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.2" stroke-linecap="round"/>
+</symbol>
+
+<symbol id="icon-visibility-eye" viewBox="0 0 24 24">
+  <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" fill="none" stroke="#e6f7f7" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="12" cy="12" r="4" fill="#1fb6b6"/>
+  <circle cx="14" cy="10" r="1.2" fill="#fff" opacity="0.7"/>
+</symbol>
+
 <!-- UNKNOWN -->
 <symbol id="icon-unknown" viewBox="0 0 24 24">
   <circle cx="12" cy="12" r="10" fill="#9fb6c2"/>
@@ -935,24 +971,24 @@ html,body{
       <div class="oceanStack">
 
         <div class="stackBox">
-          <div style="display:flex;justify-content:space-between;align-items:baseline">
-            <div style="font-size:13px;color:var(--muted)">Sea Temp.</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <svg width="32" height="32" aria-hidden="true"><use href="#icon-sea-temp"></use></svg>
             <div style="font-weight:700;font-size:19px" id="seaTemp">—</div>
           </div>
           <div class="mutedTiny" id="seaSource" style="text-align:right;opacity:0.8;margin-top:1px">—</div>
         </div>
 
         <div class="stackBox">
-          <div style="display:flex;justify-content:space-between;align-items:baseline">
-            <div style="font-size:13px;color:var(--muted)">Waves</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <svg width="32" height="32" aria-hidden="true"><use href="#icon-curling-wave"></use></svg>
             <div style="font-weight:700;font-size:19px" id="swellHeight">—</div>
           </div>
           <div class="mutedTiny" id="swellPeriod" style="text-align:right;opacity:0.8;margin-top:1px">—</div>
         </div>
 
         <div class="stackBox">
-          <div style="display:flex;justify-content:space-between;align-items:baseline">
-            <div style="font-size:13px;color:var(--muted)">Visibility</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <svg width="32" height="32" aria-hidden="true"><use href="#icon-visibility-eye"></use></svg>
             <div style="font-weight:700;font-size:19px" id="visibility">—</div>
           </div>
           <div class="mutedTiny" id="buoySource" style="text-align:right;opacity:0.8;margin-top:1px">—</div>
@@ -1531,6 +1567,7 @@ function setConditionIcon(code, iconStr) {
   // -------------------------
   function setPressureTrendIcon(elId, deltaInHg){
     const arrow = document.getElementById(elId);
+    const card = arrow ? arrow.closest('.pressureCard') : null;
     const steadyText = document.getElementById('pressureSteadyText');
     if (!arrow) return;
     arrow.style.display = 'none';
@@ -1539,6 +1576,8 @@ function setConditionIcon(code, iconStr) {
     arrow.style.top = '';
     arrow.style.bottom = '';
     arrow.title = '';
+    arrow.classList.remove('is-storm-warning'); // Always remove first
+    if (card) card.classList.remove('is-storm-alert');
     arrow.setAttribute('aria-hidden', 'true');
     if (steadyText) steadyText.style.display = 'none';
 
@@ -1574,6 +1613,15 @@ function setConditionIcon(code, iconStr) {
       arrow.setAttribute('aria-label', 'Pressure falling');
       arrow.setAttribute('aria-hidden', 'false');
       arrow.title = 'Falling';
+      // Check for storm warning condition
+      if (deltaInHg < -0.03) { // Pressure dropped more than 0.03 inHg
+        arrow.classList.add('is-storm-warning');
+        arrow.title = 'Falling rapidly (Storm Warning)'; // Update title for more info
+      }
+      // Severe drop: pulse the entire box
+      if (deltaInHg < -0.12 && card) {
+        card.classList.add('is-storm-alert');
+      }
     }
   }
 
