@@ -433,6 +433,25 @@ html,body{
   background:linear-gradient(180deg,#4fc3f7,#0288d1);
   height:0%;
 }
+/* 30-day rain pillar */
+.rain30Pillar {
+  width: 12px;
+  height: 110px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+#rain30Fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 0%;
+  transition: height 1s ease-out, background-color 0.5s;
+}
 /* Puddle effect at the base of the gauge */
 #rainGauge::after {
   content: "";
@@ -791,12 +810,10 @@ html,body{
 </symbol>
 
 <symbol id="icon-curling-wave" viewBox="0 0 24 24">
-  <!-- Detailed Hokusai-style Breaking Wave -->
-  <path d="M2 21c5 0 7-16 16-16 3.5 0 4.5 3 4.5 6 0 4-4 5-4 1.5 0-3 2-3 2-2s-1-2-2.5-2c-4 0-6 11-10 11" fill="#0288d1"/>
-  <circle cx="18" cy="5" r="1.5" fill="#fff"/>
-  <circle cx="21" cy="6.5" r="1.2" fill="#fff" opacity="0.8"/>
-  <circle cx="22.5" cy="9.5" r="1" fill="#fff" opacity="0.6"/>
-  <path d="M5 19c3-1 5-6 6-11" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M2 21h20c-2 0-4-4-5-11c-1-9-13-9-13-1c0 4 4 4 5 1c1-2 4-2 4 1c0 5-5 10-11 10z" fill="#0288d1"/>
+  <circle cx="6" cy="7" r="1.2" fill="#fff"/>
+  <circle cx="4" cy="10" r="1" fill="#fff" opacity="0.8"/>
+  <circle cx="5" cy="13" r="0.8" fill="#fff" opacity="0.6"/>
 </symbol>
 
 <symbol id="icon-visibility-eye" viewBox="0 0 24 24">
@@ -887,15 +904,27 @@ html,body{
 
           <!-- rainWrap -->
           <div class="rainWrap">
-            <div class="miniCard" aria-label="Rain">
-              <div id="rainGauge" aria-hidden="true">
-                <div class="overflow-mark">!</div>
-                <div style="position:absolute;left:6px;right:6px;top:6px;bottom:6px;">
-                  <div id="gaugeFill" style="height:0%"></div>
-                  <div id="gaugeTicks" style="position:absolute;top:0;bottom:0;left:0;right:0;pointer-events:none"></div>
+            <div class="miniCard" aria-label="Rain" style="min-width: 110px;">
+              <div style="display:flex; align-items: flex-end; gap: 10px;">
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                  <div id="rainGauge" aria-hidden="true">
+                    <div class="overflow-mark">!</div>
+                    <div style="position:absolute;left:6px;right:6px;top:6px;bottom:6px;">
+                      <div id="gaugeFill" style="height:0%"></div>
+                      <div id="gaugeTicks" style="position:absolute;top:0;bottom:0;left:0;right:0;pointer-events:none"></div>
+                    </div>
+                  </div>
+                  <div class="gaugeAmount" id="gaugeAmount" style="margin-top:4px;font-weight:600;font-size:18px;font-family:system-ui,sans-serif">0.00"</div>
+                  <div class="mutedTiny" style="font-size:8px; margin-top:-2px">TODAY</div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                  <div class="rain30Pillar" id="rain30Pillar" title="Last 30 Days">
+                    <div id="rain30Fill"></div>
+                  </div>
+                  <div id="rain30Val" style="margin-top:4px;font-weight:600;font-size:18px;font-family:system-ui,sans-serif">0.0"</div>
+                  <div class="mutedTiny" id="rain30Status" style="font-size:8px; margin-top:-2px">30 DAY</div>
                 </div>
               </div>
-              <div class="gaugeAmount" id="gaugeAmount" style="margin-top:4px;font-weight:600;font-size:18px;font-family:system-ui,sans-serif">0.00"</div>
             </div>
           </div>
 
@@ -999,8 +1028,9 @@ html,body{
     <div class="card" style="padding:8px 16px">
       <div class="forecastRow" id="forecastList" aria-live="polite"></div>
     </div>
-    <div style="display:flex;justify-content:flex-end;margin-top:6px;padding-right:4px">
-      <div class="mutedTiny">Updated <span id="updatedText">—</span></div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px;padding-right:4px;padding-left:4px">
+      <div class="mutedTiny">Weather Source: <span id="weatherSource">—</span></div>
+      <div class="mutedTiny">Updated: <span id="updatedText">—</span></div>
     </div>
   </div>
 
@@ -1639,45 +1669,35 @@ function setConditionIcon(code, iconStr) {
     } catch (e) { console.warn('fetchSunTimes failed', e); return null; }
   }
 
-function getMoonPhase(date = new Date()){
-  const lp = 2551443; // lunar period in seconds
+function getMoonPhase(date = new Date()) {
+  const lp = 2551443; // synodic month in seconds
   const now = Math.floor(date.getTime() / 1000);
   const new_moon = Math.floor(new Date("2000-01-06T18:14:00Z").getTime() / 1000);
+  let fraction = ((now - new_moon) % lp) / lp;
+  if (fraction < 0) fraction += 1;
 
-  // 0.0 → new moon, 0.5 → full moon, 1.0 → new moon again
-  const fraction = ((now - new_moon) % lp) / lp;
+  let name, index;
+  // Refined ranges to catch specific moments like "Quarter" vs the longer "Crescent" phases
+  if (fraction < 0.03 || fraction > 0.97) { name = "New Moon"; index = 0; }
+  else if (fraction < 0.22) { name = "Waxing Crescent"; index = 1; }
+  else if (fraction < 0.28) { name = "First Quarter"; index = 2; }
+  else if (fraction < 0.47) { name = "Waxing Gibbous"; index = 3; }
+  else if (fraction < 0.53) { name = "Full Moon"; index = 4; }
+  else if (fraction < 0.72) { name = "Waning Gibbous"; index = 5; }
+  else if (fraction < 0.78) { name = "Last Quarter"; index = 6; }
+  else { name = "Waning Crescent"; index = 7; }
 
-  const phases = [
-    { name: 'New Moon', index: 0 },
-    { name: 'Waxing Crescent', index: 1 },
-    { name: 'First Quarter', index: 2 },
-    { name: 'Waxing Gibbous', index: 3 },
-    { name: 'Full', index: 4 },
-    { name: 'Waning Gibbous', index: 5 },
-    { name: 'Last Quarter', index: 6 },
-    { name: 'Waning Crescent', index: 7 }
-  ];
-
-  const idx = Math.floor(fraction * 8) % 8;
-
-  return {
-    name: phases[idx].name,
-    index: phases[idx].index,
-    fraction // ← THIS is what the SVG needs
-  };
-
-  }
+  return { name, index, fraction };
+}
 
 function getMoonKeyword(phaseText) {
-  phaseText = phaseText.toLowerCase();
-
-  if (phaseText.includes("new")) return "New";
-  if (phaseText.includes("full")) return "Full";
-  if (phaseText.includes("waxing")) return "Waxing";
-  if (phaseText.includes("waning")) return "Waning";
-  if (phaseText.includes("quarter")) return "Quarter";
-
-  return "";
+  const p = phaseText.toLowerCase();
+  if (p.includes("new")) return "New";
+  if (p.includes("full")) return "Full";
+  if (p.includes("quarter")) return "Quarter";
+  if (p.includes("waxing")) return "Waxing";
+  if (p.includes("waning")) return "Waning";
+  return phaseText;
 }
 
 
@@ -2315,22 +2335,19 @@ document.getElementById('sunNextIcon').innerHTML =
 
   // --- Moon Phase ---
   // --- Moon Phase ---
-const mp = getMoonPhase(new Date());
-document.getElementById('moonIcon').innerHTML = moonSvgBase;
+  const mp = getMoonPhase(new Date());
+  document.getElementById('moonIcon').innerHTML = moonSvgBase;
 
-// Convert your 0–1 cycle (new→full→new) into lit fraction
-const phase = mp.fraction;
-const lit = phase <= 0.5 ? phase * 2 : (1 - phase) * 2;
+  const phase = mp.fraction; 
+  const isWaning = phase > 0.5;
+  const lit = isWaning ? (1 - phase) * 2 : phase * 2;
 
-// Move shadow circle
-// Move shadow from center (new moon) to far right (full moon)
-const shadowX = 50 + lit * 120;  // 120 pushes it fully off the moon
+  // To reveal 0% to 100% of the moon, the shadow circle (r=28) moves 56 units total.
+  // Waxing: lit on right (shadow moves left). Waning: lit on left (shadow moves right).
+  const shadowX = isWaning ? (50 + lit * 56) : (50 - lit * 56);
 
-document.getElementById("moonShadowCircle").setAttribute("cx", shadowX);
-
-
-// Update label
-document.getElementById('moonLabel').textContent = getMoonKeyword(mp.name);
+  document.getElementById("moonShadowCircle").setAttribute("cx", shadowX);
+  document.getElementById('moonLabel').textContent = getMoonKeyword(mp.name);
 
 
 
@@ -2504,6 +2521,7 @@ function renderForecast7(forecast) {
 
       setText('updatedText', new Date().toLocaleTimeString());
       const w = data.weather || {};
+      setText('weatherSource', w.source || '—');
       let airTempFnum = null;
       if (w.temp_c !== null && w.temp_c !== undefined) airTempFnum = cToF(w.temp_c);
       else if (w.temp_f !== null && w.temp_f !== undefined) airTempFnum = Number(w.temp_f);
@@ -2661,12 +2679,31 @@ updateWindHistoryArc();
       const rainVal = (data.rain_today_in !== undefined) ? data.rain_today_in : (data.weather?.rain_mm_1h ? (data.weather.rain_mm_1h / 25.4) : 0);
       updateRainGauge(rainVal || 0);
 
-// --- Moon Phase (local calculation) ---
-const moon = getMoonPhase(new Date());
-const moonIcons = ['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘'];
-
-document.getElementById('moonIcon').textContent = moonIcons[moon.index];
-document.getElementById('moonLabel').textContent = getMoonKeyword(moon.name);
+      // 30-Day Rain Update
+      if (historyData && Array.isArray(historyData.precip_last30)) {
+        const total30 = historyData.precip_last30.reduce((acc, d) => acc + (Number(d.rain_in) || 0), 0);
+        const r30Fill = document.getElementById('rain30Fill');
+        const r30Val = document.getElementById('rain30Val');
+        const r30Status = document.getElementById('rain30Status');
+        
+        if (r30Fill && r30Val) {
+          const pct30 = Math.min(100, (total30 / 7) * 100);
+          r30Fill.style.height = pct30 + '%';
+          r30Val.textContent = total30.toFixed(1) + '"';
+          
+          let color = '#1fb6b6'; // Default Normal
+          let statusTxt = 'NORMAL';
+          
+          if (total30 <= 1) { color = '#a67c52'; statusTxt = 'V. DRY'; }
+          else if (total30 <= 3) { color = '#ffd166'; statusTxt = 'DRY'; }
+          else if (total30 <= 5) { color = '#1fb6b6'; statusTxt = 'NORMAL'; }
+          else if (total30 <= 6) { color = '#39a0ff'; statusTxt = 'WET'; }
+          else { color = '#0288d1'; statusTxt = 'V. WET'; }
+          
+          r30Fill.style.backgroundColor = color;
+          if (r30Status) r30Status.textContent = statusTxt;
+        }
+      }
 
 
 
