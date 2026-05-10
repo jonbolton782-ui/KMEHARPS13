@@ -507,12 +507,12 @@ html,body{
   /* Total content: 800 + 12 (gap) + 140 = 952px (Matches topBand) */
   grid-template-columns: minmax(min-content, 800px) 140px;
   gap:12px;
-  align-items:start;
+  align-items:stretch;
   justify-content: start;
 }
-#tideCanvas{width:100%;height:180px;border-radius:8px;background:linear-gradient(180deg,#06282f,#04202a);display:block}
+#tideCanvas{width:100%;height:210px;border-radius:8px;background:linear-gradient(180deg,#06282f,#04202a);display:block}
 .tideCanvasWrap { min-width: 0; }
-.stackBox{padding:8px 10px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(0,0,0,0.02));border:1px solid rgba(255,255,255,0.03);box-sizing:border-box}
+.stackBox{padding:2px 10px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(0,0,0,0.02));border:1px solid rgba(255,255,255,0.03);box-sizing:border-box}
 .oceanStack {
   display: flex;
   flex-direction: column;
@@ -523,6 +523,7 @@ html,body{
 
 .mutedTiny{color:var(--muted);font-size:11px}
 .dashboardHeader{font-size:11px;color:var(--muted);font-weight:500;opacity:0.6;margin-bottom:8px;letter-spacing:0.02em}
+.dashboardHeader{font-size:16px;color:var(--muted);font-weight:500;opacity:0.6;margin-bottom:3px;letter-spacing:0.02em}
 .nowBadge{background:var(--now-accent);color:#071018;padding:4px 8px;border-radius:12px;font-weight:700;font-size:12px}
 
 /* Responsive tweaks */
@@ -530,7 +531,6 @@ html,body{
   .tempValue{font-size:72px;line-height:72px}
   .sparkWrap{height:44px}
   #tempSpark{height:34px}
-  #tideCanvas{height:140px}
 
   /* keep the right column consistent at this breakpoint */
   .topBand{ grid-template-columns: minmax(min-content, 720px) 220px; }
@@ -550,7 +550,6 @@ html,body{
   .tempValue{font-size:60px;line-height:60px}
   .sparkWrap{height:36px}
   #tempSpark{height:28px}
-  #tideCanvas{height:120px}
 
   /* narrower right column on smaller screens */
   .topBand{ grid-template-columns: minmax(min-content, 720px) 180px; }
@@ -801,7 +800,7 @@ html,body{
         fill="none" stroke="#b0bec5" stroke-width="1.8" stroke-linecap="round"/>
 </symbol>
 
-<!-- OCEAN STACK ICONS (Redesigned for realism and impact) -->
+<!-- OCEAN STACK ICONS -->
 <symbol id="icon-sea-temp" viewBox="0 0 24 24">
   <path d="M7 15.5V4a1.5 1.5 0 1 0-3 0v11.5a3 3 0 1 0 3 0z" fill="none" stroke="#9fb6c2" stroke-width="1.2"/>
   <path d="M5.5 17.5a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4z M5.5 18V8" stroke="#ff8c42" stroke-width="2.5" stroke-linecap="round" fill="#ff8c42"/>
@@ -809,11 +808,18 @@ html,body{
   <path d="M12 15c1.5 0 1.5 2 3 2s1.5-2 3-2 1.5 2 3 2" fill="none" stroke="#4fc3f7" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
 </symbol>
 
-<symbol id="icon-curling-wave" viewBox="0 0 24 24">
-  <path d="M2 21h20c-2 0-4-4-5-11c-1-9-13-9-13-1c0 4 4 4 5 1c1-2 4-2 4 1c0 5-5 10-11 10z" fill="#0288d1"/>
-  <circle cx="6" cy="7" r="1.2" fill="#fff"/>
-  <circle cx="4" cy="10" r="1" fill="#fff" opacity="0.8"/>
-  <circle cx="5" cy="13" r="0.8" fill="#fff" opacity="0.6"/>
+<symbol id="icon-wave-swell" viewBox="0 0 24 24">
+  <path d="M2 17c4.5 0 4.5-2 9-2s4.5 2 9 2" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round"/>
+</symbol>
+<symbol id="icon-wave-average" viewBox="0 0 24 24">
+  <path d="M2 17c3-4 3-4 6 0s3 4 6 0 3-4 6 0" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round"/>
+</symbol>
+<symbol id="icon-wave-steep" viewBox="0 0 24 24">
+  <path d="M2 18l4-8 4 8 4-8 4 8" fill="none" stroke="#4fc3f7" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+</symbol>
+<symbol id="icon-wave-very-steep" viewBox="0 0 24 24">
+  <path d="M2 19l3-11 3 11 3-11 3 11 3-11" fill="none" stroke="#ff6b6b" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M4 10c1-2 2-2 3 0M10 10c1-2 2-2 3 0" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
 </symbol>
 
 <symbol id="icon-visibility-eye" viewBox="0 0 24 24">
@@ -833,7 +839,7 @@ html,body{
 
   <div class="container">
     <div class="card" style="padding:6px 12px">
-      <div class="dashboardHeader">Orrs Hill Weather Station (KMEHARPS13)</div>
+      <div class="dashboardHeader" id="dashboardHeader">Orrs Hill Weather Station (KMEHARPS13)</div>
 <div class="topBand">
   <!-- LEFT COLUMN -->
   <div class="leftBandRow">
@@ -1000,24 +1006,24 @@ html,body{
 
         <div class="stackBox">
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <svg width="32" height="32" aria-hidden="true"><use href="#icon-sea-temp"></use></svg>
-            <div style="font-weight:700;font-size:19px" id="seaTemp">—</div>
+            <svg width="44" height="44" aria-hidden="true"><use href="#icon-sea-temp"></use></svg>
+            <div style="font-weight:700;font-size:21px" id="seaTemp">—</div>
           </div>
           <div class="mutedTiny" id="seaSource" style="text-align:right;opacity:0.8;margin-top:1px">—</div>
         </div>
 
         <div class="stackBox">
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <svg width="32" height="32" aria-hidden="true"><use href="#icon-curling-wave"></use></svg>
-            <div style="font-weight:700;font-size:19px" id="swellHeight">—</div>
+            <svg id="waveIcon" width="44" height="44" aria-hidden="true"><use href="#icon-wave-average"></use></svg>
+            <div style="font-weight:700;font-size:21px" id="swellHeight">—</div>
           </div>
           <div class="mutedTiny" id="swellPeriod" style="text-align:right;opacity:0.8;margin-top:1px">—</div>
         </div>
 
         <div class="stackBox">
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <svg width="32" height="32" aria-hidden="true"><use href="#icon-visibility-eye"></use></svg>
-            <div style="font-weight:700;font-size:19px" id="visibility">—</div>
+            <svg width="44" height="44" aria-hidden="true"><use href="#icon-visibility-eye"></use></svg>
+            <div style="font-weight:700;font-size:21px" id="visibility">—</div>
           </div>
           <div class="mutedTiny" id="buoySource" style="text-align:right;opacity:0.8;margin-top:1px">—</div>
         </div>
@@ -1028,8 +1034,7 @@ html,body{
     <div class="card" style="padding:8px 16px">
       <div class="forecastRow" id="forecastList" aria-live="polite"></div>
     </div>
-    <div style="display:flex;justify-content:space-between;margin-top:6px;padding-right:4px;padding-left:4px">
-      <div class="mutedTiny">Weather Source: <span id="weatherSource">—</span></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:6px;padding-right:4px;padding-left:4px">
       <div class="mutedTiny">Updated: <span id="updatedText">—</span></div>
     </div>
   </div>
@@ -1185,21 +1190,16 @@ const moonSvgBase = `
       <stop offset="100%" stop-color="#d0d0d0"/>
     </radialGradient>
 
-    <!-- Mask for moon phase -->
-    <mask id="moonPhaseMask">
-      <rect width="100" height="100" fill="white"/>
-      <!-- THIS is the missing element -->
-      <circle id="moonShadowCircle" cx="50" cy="50" r="28" fill="black"/>
-    </mask>
   </defs>
 
-  <!-- Base moon -->
-  <circle cx="50" cy="50" r="28"
-          fill="url(#moonShadeGradient)"
-          stroke="white"
-          stroke-width="2"
-          filter="url(#moonGlowFilter)"
-          mask="url(#moonPhaseMask)"/>
+  <!-- Dark base for the unlit part -->
+  <circle cx="50" cy="50" r="28" fill="#1a252b" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+
+  <!-- Dynamic lit path (Terminator uses a semi-ellipse for realism) -->
+  <path id="moonLitPath" fill="url(#moonShadeGradient)" filter="url(#moonGlowFilter)" />
+
+  <!-- Fixed outer rim -->
+  <circle cx="50" cy="50" r="28" fill="none" stroke="white" stroke-width="2" opacity="0.8" />
 
 </svg>
 
@@ -2338,15 +2338,18 @@ document.getElementById('sunNextIcon').innerHTML =
   const mp = getMoonPhase(new Date());
   document.getElementById('moonIcon').innerHTML = moonSvgBase;
 
-  const phase = mp.fraction; 
-  const isWaning = phase > 0.5;
-  const lit = isWaning ? (1 - phase) * 2 : phase * 2;
+  const p = mp.fraction;
+  const R = 28;
+  // Calculate the horizontal radius of the elliptical terminator
+  const rx = R * Math.abs(1 - 4 * (p % 0.5));
+  // Determine sweep flags for a realistic spherical projection
+  const sweep = (p % 0.5) < 0.25 ? 0 : 1;
+  const outerSweep = p < 0.5 ? 1 : 0;
+  
+  const d = `M 50 22 A 28 28 0 0 ${outerSweep} 50 78 A ${rx} 28 0 0 ${sweep} 50 22`;
+  const moonLitPath = document.getElementById('moonLitPath');
+  if (moonLitPath) moonLitPath.setAttribute('d', d);
 
-  // To reveal 0% to 100% of the moon, the shadow circle (r=28) moves 56 units total.
-  // Waxing: lit on right (shadow moves left). Waning: lit on left (shadow moves right).
-  const shadowX = isWaning ? (50 + lit * 56) : (50 - lit * 56);
-
-  document.getElementById("moonShadowCircle").setAttribute("cx", shadowX);
   document.getElementById('moonLabel').textContent = getMoonKeyword(mp.name);
 
 
@@ -2521,7 +2524,21 @@ function renderForecast7(forecast) {
 
       setText('updatedText', new Date().toLocaleTimeString());
       const w = data.weather || {};
-      setText('weatherSource', w.source || '—');
+
+      // Update Dashboard Header based on source
+      const headerEl = document.getElementById('dashboardHeader');
+      const source = w.source || '';
+      if (headerEl) {
+        if (source === 'Weather Underground') {
+          headerEl.textContent = 'Orrs Hill Weather Station (KMEHARPS13)';
+        } else if (source === 'Acuparse') {
+          headerEl.textContent = 'Orrs Hill Weather Station (AcuPulse)';
+          headerEl.textContent = 'Orrs Hill Weather Station (Acuparse)';
+        } else if (source === 'OpenWeather') {
+          headerEl.textContent = 'OpenWeather (Harpswell)';
+        }
+      }
+
       let airTempFnum = null;
       if (w.temp_c !== null && w.temp_c !== undefined) airTempFnum = cToF(w.temp_c);
       else if (w.temp_f !== null && w.temp_f !== undefined) airTempFnum = Number(w.temp_f);
@@ -2656,6 +2673,17 @@ updateWindHistoryArc();
 
       const swellH = getBuoyVal(ocean.combined_wave_m, ['combined_wave_m']);
       setText('swellHeight', swellH !== null ? (swellH / 0.3048).toFixed(1) + ' ft' : '—');
+
+      // Update Wave Icon based on steepness
+      const steepness = (ocean.steepness || '').toLowerCase();
+      const wIcoEl = document.getElementById('waveIcon');
+      if (wIcoEl) {
+        let iconId = 'icon-wave-average';
+        if (steepness.includes('very')) iconId = 'icon-wave-very-steep';
+        else if (steepness.includes('steep')) iconId = 'icon-wave-steep';
+        else if (steepness.includes('swell')) iconId = 'icon-wave-swell';
+        wIcoEl.querySelector('use').setAttribute('href', '#' + iconId);
+      }
 
       const swellP = getBuoyVal(ocean.wave_period_s, ['wave_period_s']);
       const pEl = document.getElementById('swellPeriod');
