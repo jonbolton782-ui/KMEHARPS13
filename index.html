@@ -1973,7 +1973,7 @@ function getMoonKeyword(phaseText) {
         const y = mapY(p.height);
         if (idx===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
       });
-      ctx.strokeStyle = 'rgba(120,210,200,0.98)';
+      ctx.strokeStyle = 'rgba(57, 160, 255, 0.98)';
       ctx.lineWidth = 5 * uiScale();
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
@@ -1982,7 +1982,7 @@ function getMoonKeyword(phaseText) {
       ctx.lineTo(originX + w, originY + h);
       ctx.lineTo(originX, originY + h);
       ctx.closePath();
-      ctx.fillStyle = 'rgba(120,210,200,0.08)';
+      ctx.fillStyle = 'rgba(57, 160, 255, 0.2)';
       ctx.fill();
 
       (H||[]).forEach(hp => {
