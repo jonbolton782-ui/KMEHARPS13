@@ -2266,7 +2266,7 @@ async function updateRightSide(data, historyData = null){
   // Compute trend using history API if available, fallback to station history
   let trendPoints = [];
   if (historyData && Array.isArray(historyData.pressure_last)) {
-    trendPoints = historyData.pressure_last.map(i => ({ ts: toMs(i.t), p: safeNum(i.p) }));
+    trendPoints = historyData.pressure_last.map(i => ({ ts: toMs(i.t), p: safeNum(i.hpa) }));
   } else if (data.station && Array.isArray(data.station.history)) {
     trendPoints = data.station.history.map(h => ({
       ts: toMs(h.ts ?? h.time ?? h.timestamp),
