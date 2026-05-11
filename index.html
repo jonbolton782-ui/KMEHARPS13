@@ -138,7 +138,7 @@ html,body{
 }
 
 .moonCard .cardLabel {
-  margin-top: 0px;
+  margin-top: -10px;
 }
 
 .sunCard .sunIconSvg {
@@ -1777,8 +1777,8 @@ function getMoonKeyword(phaseText) {
     ctx.lineTo(padX, padY + h);
     ctx.closePath();
     const grad = ctx.createLinearGradient(0,padY,0,padY+h);
-    grad.addColorStop(0,'rgba(42,168,118,0.16)');
-    grad.addColorStop(1,'rgba(42,168,118,0.02)');
+    grad.addColorStop(0,'rgba(255, 209, 102, 0.16)');
+    grad.addColorStop(1,'rgba(255, 209, 102, 0.02)');
     ctx.fillStyle = grad;
     ctx.fill();
 
@@ -1787,7 +1787,7 @@ function getMoonKeyword(phaseText) {
       const x = mapX(p.ts), y = mapY(p.f);
       if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
     });
-    ctx.strokeStyle = '#2aa876';
+    ctx.strokeStyle = '#ffd166';
     ctx.lineWidth = Math.max(1, 2 * scale);
     ctx.stroke();
 
@@ -1814,7 +1814,7 @@ function getMoonKeyword(phaseText) {
     const last = points[points.length-1];
     const nowX = mapX(last.ts);
 
-    ctx.beginPath(); ctx.fillStyle = '#071018'; ctx.strokeStyle = '#2aa876'; ctx.lineWidth = Math.max(1, 1.2 * scale);
+    ctx.beginPath(); ctx.fillStyle = '#071018'; ctx.strokeStyle = '#ffd166'; ctx.lineWidth = Math.max(1, 1.2 * scale);
     ctx.arc(nowX, mapY(last.f), Math.max(2, 4 * scale), 0, Math.PI*2); ctx.fill(); ctx.stroke();
 
     setText('sparkRange', minF.toFixed(1) + '°F / ' + maxF.toFixed(1) + '°F');
