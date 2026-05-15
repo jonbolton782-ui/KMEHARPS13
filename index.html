@@ -566,7 +566,25 @@ html,body{
   animation: box-storm-pulse 2s infinite ease-in-out;
   border: 1px solid var(--danger) !important;
 }
-.top
+
+@keyframes frost-pulse {
+  0%, 100% { background-color: #0055ff; box-shadow: 0 0 5px rgba(0, 85, 255, 0.4); }
+  50% { background-color: #0088ff; box-shadow: 0 0 15px rgba(0, 136, 255, 0.7); }
+}
+
+.frost-warning {
+  background-color: #0055ff;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 1.3rem;
+  animation: frost-pulse 1.2s infinite ease-in-out;
+  display: inline-block;
+  border: 1px solid #4fc3f7;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+}
 </style>
 
 
@@ -575,12 +593,12 @@ html,body{
 
   <!-- Inline SVG sprite for condition icons -->
 <!-- CLEAR -->
-<svg aria-hidden="true" style="display:none" xmlns="http://www.w3.org/2000/svg">
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden" xmlns="http://www.w3.org/2000/svg">
 <defs>
   <!-- Global mask to hide the portion of the sun/moon behind the cloud outline -->
-  <mask id="mask-cloud-cutout">
-    <rect width="24" height="24" fill="white"/>
-    <path d="M14 18h2a3 3 0 1 0-1-5.8 4 4 0 1 0-7.3 1.8" fill="black"/>
+  <mask id="mask-cloud-cutout" maskContentUnits="userSpaceOnUse">
+    <rect x="0" y="0" width="24" height="24" fill="white"/>
+    <path d="M14 18h2a3 3 0 1 0-1-5.8 4 4 0 1 0-7.3 1.8Z" fill="black"/>
   </mask>
 </defs>
 <symbol id="icon-clear-day" viewBox="0 0 24 24">
@@ -599,13 +617,13 @@ html,body{
 
 <!-- FEW CLOUDS -->
 <symbol id="icon-few-clouds-day" viewBox="0 0 24 24">
-  <circle cx="10" cy="9" r="4.5" fill="#ffd166" mask="url(#mask-cloud-cutout)"/>
-  <path d="M14 18h2a3 3 0 1 0-1-5.8 4 4 0 1 0-7.3 1.8" fill="none" stroke="#cfd8dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="14" cy="9" r="5" fill="#ffd166" mask="url(#mask-cloud-cutout)"/>
+  <path d="M14 18h2a3 3 0 1 0-1-5.8 4 4 0 1 0-7.3 1.8" fill="rgba(207, 216, 220, 0.2)" stroke="#cfd8dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </symbol>
 
 <symbol id="icon-few-clouds-night" viewBox="0 0 24 24"> <!-- Night: Large moon, small cloud bottom-right -->
-  <path d="M10 6a6 6 0 1 0 7 7 4.5 4.5 0 0 1-7-7z" fill="#b0c4de" mask="url(#mask-cloud-cutout)"/>
-  <path d="M14 18h2a3 3 0 1 0-1-5.8 4 4 0 1 0-7.3 1.8" fill="none" stroke="#cfd8dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M11 8a6 6 0 1 0 7 7 4.5 4.5 0 0 1-7-7z" fill="#b0c4de" mask="url(#mask-cloud-cutout)"/>
+  <path d="M14 18h2a3 3 0 1 0-1-5.8 4 4 0 1 0-7.3 1.8" fill="rgba(207, 216, 220, 0.2)" stroke="#cfd8dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </symbol>
 
 <!-- CLOUDS -->
@@ -1077,6 +1095,80 @@ const sunsetSvg = `
 
 
 `;
+
+const springEquinoxSvg = `
+<svg viewBox="0 0 100 100" class="sunIconSvg">
+  <defs>
+    <linearGradient id="springGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD36A"/><stop offset="100%" stop-color="#7ED957"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="35" fill="url(#springGrad)" />
+  <g fill="none" stroke="white" stroke-width="4" stroke-linecap="round">
+    <path d="M50 75 V55 M50 55 Q65 45 62 35 M50 55 Q35 45 38 35" />
+  </g>
+</svg>
+`;
+
+const summerSolsticeSvg = `
+<svg viewBox="0 0 100 100" class="sunIconSvg">
+  <defs>
+    <linearGradient id="summerGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FF512F"/><stop offset="100%" stop-color="#F09819"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="40" fill="url(#summerGrad)" />
+  <g stroke="white" stroke-width="5" stroke-linecap="round">
+    <path d="M30 48 h14 a4 4 0 0 1 8 0 h14" fill="none" />
+    <circle cx="37" cy="48" r="7" fill="rgba(0,0,0,0.3)" />
+    <circle cx="63" cy="48" r="7" fill="rgba(0,0,0,0.3)" />
+  </g>
+</svg>
+`;
+
+const fallEquinoxSvg = `
+<svg viewBox="0 0 100 100" class="sunIconSvg">
+  <defs>
+    <linearGradient id="fallGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#D1913C"/><stop offset="100%" stop-color="#FFD194"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="35" fill="url(#fallGrad)" />
+  <path d="M50 30 L42 45 L35 40 L40 55 L35 70 L50 65 L65 70 L60 55 L65 40 L58 45 Z" fill="white" opacity="0.8" />
+</svg>
+`;
+
+const winterSolsticeSvg = `
+<svg viewBox="0 0 100 100" class="sunIconSvg">
+  <defs>
+    <linearGradient id="winterGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#83a4d4"/><stop offset="100%" stop-color="#b6fbff"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="35" fill="url(#winterGrad)" />
+  <g stroke="white" stroke-width="3" stroke-linecap="round">
+    <line x1="50" y1="25" x2="50" y2="75"/><line x1="25" y1="50" x2="75" y2="50"/>
+    <line x1="32" y1="32" x2="68" y2="68"/><line x1="32" y1="68" x2="68" y2="32"/>
+    <circle cx="50" cy="50" r="5" fill="none" />
+  </g>
+</svg>
+`;
+
+/**
+ * Returns a special seasonal icon if today is near a solstice or equinox.
+ */
+function getSpecialDayIcon() {
+  const now = new Date();
+  const m = now.getMonth() + 1;
+  const d = now.getDate();
+
+  if (m === 3 && (d >= 19 && d <= 21)) return springEquinoxSvg;
+  if (m === 6 && (d >= 20 && d <= 22)) return summerSolsticeSvg;
+  if (m === 9 && (d >= 21 && d <= 23)) return fallEquinoxSvg;
+  if (m === 12 && (d >= 20 && d <= 22)) return winterSolsticeSvg;
+
+  return null;
+}
 
 
  // -------------------------
@@ -2358,8 +2450,9 @@ async function updateRightSide(data, historyData = null){
       nextIcon = '🌅';
     }
 
+    const specialDayIcon = getSpecialDayIcon();
 document.getElementById('sunNextIcon').innerHTML =
-  nextLabel === 'Sunrise' ? sunriseSvg : sunsetSvg;
+  specialDayIcon ? specialDayIcon : (nextLabel === 'Sunrise' ? sunriseSvg : sunsetSvg);
 
 
 
@@ -2583,11 +2676,27 @@ function renderForecast7(forecast) {
 
       const feelsF = (w.feels_c !== null && w.feels_c !== undefined) ? cToF(w.feels_c) : (airTempFnum !== null ? airTempFnum : null);
       const feelsEl = document.getElementById("feelsLikeUnder");
-if (feelsF !== null) {
-  feelsEl.textContent = `Feels like ${feelsF.toFixed(1)}°F`;
-} else {
-  feelsEl.textContent = "";
-}
+
+      // --- Frost Warning Logic ---
+      const nowDt = new Date();
+      const m = nowDt.getMonth() + 1;
+      const d = nowDt.getDate();
+      const h = nowDt.getHours();
+      const isFrostSeason = (m > 5 && m < 10) || (m === 5 && d >= 15) || (m === 10 && d === 1);
+      const isFrostTime = h >= 18; // 6 PM to Midnight
+
+      const tomorrowForecast = data.forecast?.daily?.[1];
+      let tLow = null;
+      if (tomorrowForecast) {
+        tLow = tomorrowForecast.min !== null ? tomorrowForecast.min : (tomorrowForecast.min_c !== null ? cToF(tomorrowForecast.min_c) : null);
+      }
+
+      if (isFrostSeason && isFrostTime && tLow !== null && tLow <= 36) {
+        feelsEl.innerHTML = '<div class="frost-warning">FROST WARNING!</div>';
+      } else {
+        if (feelsF !== null) feelsEl.textContent = `Feels like ${feelsF.toFixed(1)}°F`;
+        else feelsEl.textContent = "";
+      }
 
 
 const iconCandidate = data.weather?.icon || data.weather?.icon_code || data.weather?.condition_icon || (data.weather?.weather && data.weather.weather[0] && data.weather.weather[0].icon) || null;
