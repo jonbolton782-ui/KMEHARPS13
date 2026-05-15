@@ -277,24 +277,24 @@ html,body{
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  flex:0 0 140px;
+  flex:0 0 150px; /* Adjusted to accommodate new icon size */
   min-width:0;
-  padding:10px 8px;
+  padding:5px;
   gap:6px;
   box-sizing:border-box;
 }
 
 .conditionIcon{
-  width:92px;
-  height:92px;
+  width:130px; /* Scaled down */
+  height:130px; /* Scaled down */
   display:flex;
   align-items:center;
   justify-content:center;
 }
 
 .conditionIcon svg{
-  width:92px;
-  height:92px;
+  width:100%;
+  height:100%;
 }
 
 .conditionText{
@@ -303,6 +303,7 @@ html,body{
   line-height:1.2;
   color:var(--text);
   min-height:2.4rem;
+  opacity: 0.75;
 }
 
 /* Make each direct child of the top row shrinkable (prevents immovable blocks) */
@@ -452,27 +453,6 @@ html,body{
   height: 0%;
   transition: height 1s ease-out, background-color 0.5s;
 }
-/* Puddle effect at the base of the gauge */
-#rainGauge::after {
-  content: "";
-  position: absolute;
-  bottom: -6px;
-  left: 8px;
-  right: 8px;
-  height: 6px;
-  background: #4fc3f7;
-  border-radius: 50%;
-  filter: blur(3px);
-  opacity: 0;
-  pointer-events: none;
-  box-shadow: 0 0 10px #4fc3f7;
-  transition: opacity 0.6s ease;
-  z-index: 1;
-}
-#rainGauge.is-overflowing::after {
-  opacity: 1;
-  animation: puddle-pulse 2s infinite ease-in-out;
-}
 .overflow-mark {
   position: absolute;
   top: 12px;
@@ -532,18 +512,15 @@ html,body{
   .sparkWrap{height:44px}
   #tempSpark{height:34px}
 
-  /* keep the right column consistent at this breakpoint */
-  .topBand{ grid-template-columns: minmax(min-content, 720px) 220px; }
-  .tideRow{ grid-template-columns: minmax(min-content, 800px) 140px; }
+  /* Adjust for larger icon */
+  .conditionWrap{flex:0 0 120px} /* Adjusted for this breakpoint */
+  .conditionIcon{width:100px;height:100px} /* Scaled down for this breakpoint */
+  .conditionIcon svg{width:100px;height:100px} /* Scaled down for this breakpoint */
 
   .windWrap,.rainWrap{flex:0 0 100px}
   .compassWrap{width:92px;height:92px}
   .miniCard{min-width:92px;padding:8px}
-  .conditionWrap{flex:0 0 118px}
-  .conditionIcon{width:80px;height:80px} /* Standardized to 80px */
-  .conditionIcon svg{width:78px;height:78px}
-  .conditionText{font-size:0.94rem;min-height:2.2rem}
-  #conditionIconSvg{width:56px;height:56px}
+  .conditionText{font-size:0.96rem;min-height:2.4rem}
 }
 
 @media (max-width:700px){
@@ -553,18 +530,16 @@ html,body{
 
   /* narrower right column on smaller screens */
   .topBand{ grid-template-columns: minmax(min-content, 720px) 180px; }
-  /* Aligning bottom right edge: 760 + 12 + 140 = 912 (matches 720 + 12 + 180) */
-  .tideRow{ grid-template-columns: minmax(min-content, 760px) 140px; }
+  /* Adjusted for larger icon */
+  .conditionWrap{flex:0 0 100px} /* Adjusted for this breakpoint */
+  .conditionIcon{width:80px;height:80px} /* Scaled down for this breakpoint */
+  .conditionIcon svg{width:80px;height:80px} /* Scaled down for this breakpoint */
 
   .windWrap,.rainWrap{flex:0 0 88px}
   .tempWrap{min-width:180px}
   .compassWrap{width:80px;height:80px}
   .miniCard{min-width:84px;padding:8px}
-  .conditionWrap{flex:0 0 80px} /* Standardized to 80px */
-  .conditionIcon{width:64px;height:64px}
-  .conditionIcon svg{width:64px;height:64px}
-  .conditionText{font-size:0.88rem;min-height:2rem}
-  #conditionIconSvg{width:48px;height:48px}
+  .conditionText{font-size:0.9rem;min-height:2.2rem}
 }
 
 @media (max-width:520px){
@@ -574,10 +549,6 @@ html,body{
   .rightBand{width:100%}
 }
 
-@keyframes puddle-pulse {
-  0%, 100% { transform: scale(1); opacity: 0.5; }
-  50% { transform: scale(1.15); opacity: 0.9; }
-}
 @keyframes warning-pulse {
   0%, 100% { opacity: 0.3; transform: translateX(-50%) scale(0.9); }
   50% { opacity: 1; transform: translateX(-50%) scale(1.1); }
@@ -603,174 +574,135 @@ html,body{
 <body>
 
   <!-- Inline SVG sprite for condition icons -->
-<!-- Unified Weather Icon Set (Hybrid: filled clouds, stroked details) -->
-<!-- Unified Weather Icon Set (Hybrid: filled clouds, stroked details) -->
-
 <!-- CLEAR -->
-<svg aria-hidden="true" style="display:none">
+<svg aria-hidden="true" style="display:none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <!-- Global mask to hide the portion of the sun/moon behind the cloud outline -->
+  <mask id="mask-cloud-cutout">
+    <rect width="24" height="24" fill="white"/>
+    <path d="M14 18h2a3 3 0 1 0-1-5.8 4 4 0 1 0-7.3 1.8" fill="black"/>
+  </mask>
+</defs>
 <symbol id="icon-clear-day" viewBox="0 0 24 24">
-  <circle cx="12" cy="12" r="5" fill="#ffd166"/>
+  <circle cx="12" cy="12" r="4.5" fill="#ffd166"/>
+  <g stroke="#ffd166" stroke-width="2.2" stroke-linecap="round">
+    <line x1="12" y1="3" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="21"/>
+    <line x1="3" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="21" y2="12"/>
+    <line x1="5.6" y1="5.6" x2="7" y2="7"/><line x1="17" y1="17" x2="18.4" y2="18.4"/>
+    <line x1="5.6" y1="18.4" x2="7" y2="17"/><line x1="17" y1="7" x2="18.4" y2="5.6"/>
+  </g>
 </symbol>
 
 <symbol id="icon-clear-night" viewBox="0 0 24 24">
-  <path d="M15 5a5.5 5.5 0 1 0 4 9.5A6.5 6.5 0 0 1 15 5z"
-        fill="#b0c4de"/>
+  <path d="M11 4a8 8 0 1 0 9 9 6 6 0 0 1-9-9z" fill="#b0c4de" stroke="#b0c4de" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
 </symbol>
 
 <!-- FEW CLOUDS -->
-<symbol id="icon-few-clouds-day" viewBox="0 0 24 24"> <!-- Day: Large sun, small cloud bottom-right -->
-  <circle cx="10" cy="9" r="5" fill="#ffd166"/>
-  <path d="M13 18a2.5 2.5 0 0 1 0-5 3.5 3.5 0 0 1 6.5 1.1A2 2 0 0 1 22 16.5 2 2 0 0 1 20 18.5h-7" fill="#cfd8dc"/>
+<symbol id="icon-few-clouds-day" viewBox="0 0 24 24">
+  <circle cx="10" cy="9" r="4.5" fill="#ffd166" mask="url(#mask-cloud-cutout)"/>
+  <path d="M14 18h2a3 3 0 1 0-1-5.8 4 4 0 1 0-7.3 1.8" fill="none" stroke="#cfd8dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </symbol>
 
 <symbol id="icon-few-clouds-night" viewBox="0 0 24 24"> <!-- Night: Large moon, small cloud bottom-right -->
-  <path d="M10 5a5.5 5.5 0 1 0 4 9.5A6.5 6.5 0 0 1 10 5z" fill="#b0c4de"/>
-  <path d="M13 19a2.5 2.5 0 0 1 0-5 3.5 3.5 0 0 1 6.5 1.1A2 2 0 0 1 22 17.5 2 2 0 0 1 20 19.5h-7" fill="#cfd8dc"/>
+  <path d="M10 6a6 6 0 1 0 7 7 4.5 4.5 0 0 1-7-7z" fill="#b0c4de" mask="url(#mask-cloud-cutout)"/>
+  <path d="M14 18h2a3 3 0 1 0-1-5.8 4 4 0 1 0-7.3 1.8" fill="none" stroke="#cfd8dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </symbol>
 
 <!-- CLOUDS -->
 <symbol id="icon-scattered-clouds" viewBox="0 0 24 24">
-  <path d="M5 17a4.5 4.5 0 0 1 0-9 5.5 5.5 0 0 1 10.5 2A4 4 0 0 1 17 17H5z"
-        fill="#cfd8dc"/>
+  <path d="M4 16h3a3 3 0 1 0-1-5.8 4 4 0 1 0-5 5.8" fill="none" stroke="#cfd8dc" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M16 19h3a3 3 0 1 0-1-5.8 4 4 0 1 0-5 5.8" fill="none" stroke="#cfd8dc" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
 </symbol>
 
 <symbol id="icon-broken-clouds" viewBox="0 0 24 24">
-  <circle cx="15" cy="8" r="3" fill="#ffd166"/>
-  <path d="M3 18a3.5 3.5 0 0 1 0-7 4.5 4.5 0 0 1 8.5 1.5A3 3 0 0 1 14 18H3z" fill="#cfd8dc"/>
-  <path d="M10 13a2.5 2.5 0 0 1 0-5 3.5 3.5 0 0 1 6.5 1.2A2 2 0 0 1 18 13h-8" fill="#cfd8dc"/>
+  <path d="M6 14h2a2.5 2.5 0 1 0-.5-4.9 3 3 0 1 0-4.5 4.9" fill="none" stroke="#cfd8dc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+  <path d="M14 13h2a2.5 2.5 0 1 0-.5-4.9 3 3 0 1 0-4.5 4.9" fill="none" stroke="#cfd8dc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
+  <path d="M10 20h4a3.5 3.5 0 1 0-1-6.8 5 5 0 1 0-7 6.8" fill="none" stroke="#cfd8dc" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
 </symbol>
 
 <symbol id="icon-overcast" viewBox="0 0 24 24">
-  <path d="M4 17a4 4 0 0 1 0-8 5 5 0 0 1 9.5 1.8A3.5 3.5 0 0 1 16 17H4z"
-        fill="#cfd8dc"/>
-  <path d="M7 20a3.5 3.5 0 0 1 0-7 4.5 4.5 0 0 1 8.5 1.6A3 3 0 0 1 18 20H7z"
-        fill="#cfd8dc"/>
+  <path d="M5 18h11a5 5 0 1 0-1-9.8 7 7 0 1 0-12 5.5" fill="none" stroke="#cfd8dc" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="8" y1="13" x2="16" y2="13" stroke="#cfd8dc" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
 </symbol>
 
 <!-- DRIZZLE -->
 <symbol id="icon-drizzle" viewBox="0 0 24 24">
-  <path d="M7 15a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 15H7z"
-        fill="#cfd8dc"/>
-  <g fill="#4fc3f7">
-    <circle cx="9" cy="19" r="0.9"/>
-    <circle cx="13" cy="19" r="0.9"/>
-  </g>
+  <path d="M7 14h8a4 4 0 1 0-1-7.8 5 5 0 1 0-9 4.8" fill="none" stroke="#cfd8dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M10 17v1m4-1v1m-8-1v1" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round"/>
 </symbol>
 
 <!-- LIGHT RAIN -->
 <symbol id="icon-light-rain" viewBox="0 0 24 24">
-  <!-- Cloud -->
-  <path d="M7 16a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 16H7z" fill="#cfd8dc"/>
-
-  <!-- Two clear raindrops -->
-  <path d="M9 18 v3" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round" fill="none"/>
-  <path d="M14 18 v3" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M7 14h8a4 4 0 1 0-1-7.8 5 5 0 1 0-9 4.8" fill="none" stroke="#cfd8dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M9 17l-1 3m5-3l-1 3" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round"/>
 </symbol>
-
-
-
-
 
 <!-- RAIN -->
 <symbol id="icon-rain" viewBox="0 0 24 24">
-  <path d="M7 15a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 15H7z"
-        fill="#cfd8dc"/>
-  <g fill="#4fc3f7">
-    <path d="M9 17c0 1-.8 2-1.5 2S6 18 6 17s.8-2 1.5-2 1.5 1 1.5 2z"/>
-    <path d="M14 17c0 1-.8 2-1.5 2s-1.5-1-1.5-2 .8-2 1.5-2 1.5 1 1.5 2z"/>
-    <path d="M19 17c0 1-.8 2-1.5 2s-1.5-1-1.5-2 .8-2 1.5-2 1.5 1 1.5 2z"/>
-  </g>
+  <path d="M7 14h8a4 4 0 1 0-1-7.8 5 5 0 1 0-9 4.8" fill="none" stroke="#cfd8dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 17l-1.5 4m4.5-4l-1.5 4m4.5-4l-1.5 4" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round"/>
 </symbol>
 
 <!-- HEAVY RAIN -->
 <symbol id="icon-heavy-rain" viewBox="0 0 24 24">
-  <path d="M7 14.5a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 14.5H7z"
-        fill="#cfd8dc"/>
-  <g fill="none" stroke="#4fc3f7" stroke-width="1.6" stroke-linecap="round">
-    <path d="M8 16l-1 3"/>
-    <path d="M12 16l-1 3"/>
-    <path d="M16 16l-1 3"/>
-  </g>
+  <path d="M7 14h8a4 4 0 1 0-1-7.8 5 5 0 1 0-9 4.8" fill="none" stroke="#cfd8dc" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M7 17l-1.5 5m4-5l-1.5 5m4-5l-1.5 5m4-5l-1.5 5" stroke="#4fc3f7" stroke-width="2.2" stroke-linecap="round"/>
 </symbol>
 
 <!-- SHOWER RAIN -->
 <symbol id="icon-shower-rain" viewBox="0 0 24 24">
-  <path d="M7 14.5a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 14.5H7z"
-        fill="#cfd8dc"/>
-  <g fill="none" stroke="#4fc3f7" stroke-width="1.6" stroke-linecap="round">
-    <path d="M8 16.5l-1 3"/>
-    <path d="M11 17.5l-1 3"/>
-    <path d="M14 16.5l-1 3"/>
-    <path d="M17 17.5l-1 3"/>
-  </g>
+  <path d="M7 14h8a4 4 0 1 0-1-7.8 5 5 0 1 0-9 4.8" fill="none" stroke="#cfd8dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 17l-0.5 2m3-2l-0.5 2m3-2l-0.5 2m3-2l-0.5 2" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
 </symbol>
 
 <!-- SLEET -->
 <symbol id="icon-sleet" viewBox="0 0 24 24">
-  <path d="M7 14.5a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 14.5H7z"
-        fill="#cfd8dc"/>
-  <circle cx="9" cy="18.5" r="0.9" fill="#4fc3f7"/>
-  <circle cx="13" cy="18.5" r="0.9" fill="#e0f7fa"/>
+  <path d="M7 14h8a4 4 0 1 0-1-7.8 5 5 0 1 0-9 4.8" fill="none" stroke="#cfd8dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M9 17l-1 3" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="13" cy="19" r="1.5" fill="#e0f7fa"/>
 </symbol>
 
 <!-- RAIN + SNOW -->
 <symbol id="icon-rain-snow" viewBox="0 0 24 24">
-  <path d="M7 14.5a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 14.5H7z"
-        fill="#cfd8dc"/>
-  <circle cx="9" cy="18.5" r="0.9" fill="#4fc3f7"/>
-  <circle cx="13" cy="18.5" r="0.9" fill="#e0f7fa"/>
-  <circle cx="16" cy="18.5" r="0.9" fill="#e0f7fa"/>
+  <path d="M7 14h8a4 4 0 1 0-1-7.8 5 5 0 1 0-9 4.8" fill="none" stroke="#cfd8dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 17l-1 3" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round"/>
+  <path d="M13 17l1 1m-1 0l1-1m-1 0v1.5m-0.75-0.75h1.5" stroke="#e0f7fa" stroke-width="1.2" stroke-linecap="round"/>
 </symbol>
 
 <!-- SNOW -->
 <symbol id="icon-snow" viewBox="0 0 24 24">
-  <path d="M7 15a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 15H7z"
-        fill="#cfd8dc"/>
-  <g fill="#e0f7fa">
-    <circle cx="9" cy="19" r="1"/>
-    <circle cx="12" cy="19" r="1"/>
-    <circle cx="15" cy="19" r="1"/>
+  <path d="M7 14h8a4 4 0 1 0-1-7.8 5 5 0 1 0-9 4.8" fill="none" stroke="#cfd8dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <g stroke="#e0f7fa" stroke-width="1.5" stroke-linecap="round">
+    <path d="M8 18l2 2m-2 0l2-2m-2-1v4m-2-2h4"/>
+    <path d="M14 18l2 2m-2 0l2-2m-2-1v4m-2-2h4"/>
   </g>
 </symbol>
 
 <!-- THUNDER -->
 <symbol id="icon-thunder" viewBox="0 0 24 24">
-  <path d="M7 15a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 15H7z"
-        fill="#cfd8dc"/>
-  <path d="M13 10l-2 4h2l-1 4 4-6h-3z"
-        fill="#ffd166"/>
+  <path d="M7 14h8a4 4 0 1 0-1-7.8 5 5 0 1 0-9 4.8" fill="none" stroke="#cfd8dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M11 13l-2 4h3l-1 5 4-6h-3l2-3z" fill="#ffd166" stroke="#ffd166" stroke-width="1" stroke-linejoin="round"/>
 </symbol>
 
 <!-- THUNDER + RAIN -->
 <symbol id="icon-thunder-rain" viewBox="0 0 24 24">
-  <path d="M7 14.5a5 5 0 0 1 0-10 6 6 0 0 1 11.3 2.2A4.5 4.5 0 0 1 18 14.5H7z"
-        fill="#cfd8dc"/>
-  <path d="M13 9.5l-2 4h2l-1 4 4-6h-3z"
-        fill="#ffd166"/>
-  <g fill="#4fc3f7">
-    <circle cx="9" cy="19" r="0.9"/>
-    <circle cx="15" cy="19" r="0.9"/>
-  </g>
+  <path d="M7 14h8a4 4 0 1 0-1-7.8 5 5 0 1 0-9 4.8" fill="none" stroke="#cfd8dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13 13l-1.5 3h2l-1 4 3-4h-2.5l1.5-3z" fill="#ffd166" stroke="#ffd166" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M7 18l-1 3m3-3l-1 3" stroke="#4fc3f7" stroke-width="2" stroke-linecap="round"/>
 </symbol>
 
 <!-- ATMOSPHERE -->
 <symbol id="icon-mist" viewBox="0 0 24 24">
-  <path d="M4 9h16" stroke="#b0bec5" stroke-width="2" stroke-linecap="round"/>
-  <path d="M4 13h16" stroke="#b0bec5" stroke-width="2" stroke-linecap="round"/>
-  <path d="M4 17h16" stroke="#b0bec5" stroke-width="2" stroke-linecap="round"/>
+  <path d="M4 10h16M6 14h12M4 18h16" stroke="#b0bec5" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
 </symbol>
 
 <symbol id="icon-fog" viewBox="0 0 24 24">
-  <path d="M5 9h14" stroke="#b0bec5" stroke-width="2" stroke-linecap="round"/>
-  <path d="M4 12h16" stroke="#b0bec5" stroke-width="2" stroke-linecap="round"/>
-  <path d="M5 15h14" stroke="#b0bec5" stroke-width="2" stroke-linecap="round"/>
-  <path d="M6 18h12" stroke="#b0bec5" stroke-width="2" stroke-linecap="round"/>
+  <path d="M3 10h18M3 13h18M3 16h18M3 19h18" stroke="#b0bec5" stroke-width="2.5" stroke-linecap="round"/>
 </symbol>
 
 <symbol id="icon-haze" viewBox="0 0 24 24">
-  <path d="M4 9h16" stroke="#b0bec5" stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>
-  <path d="M4 12h16" stroke="#b0bec5" stroke-width="1.6" stroke-linecap="round" opacity="0.9"/>
-  <path d="M4 15h16" stroke="#b0bec5" stroke-width="1.6" stroke-linecap="round" opacity="0.7"/>
+  <circle cx="12" cy="9" r="4" fill="#ffd166" opacity="0.4" />
+  <path d="M4 14h16M6 17h12M4 20h16" stroke="#b0bec5" stroke-width="1.8" stroke-linecap="round"/>
 </symbol>
 
 <symbol id="icon-dust" viewBox="0 0 24 24">
@@ -913,9 +845,11 @@ html,body{
             <div class="miniCard" aria-label="Rain" style="min-width: 110px;">
               <div style="display:flex; align-items: flex-end; gap: 10px;">
                 <div style="display:flex; flex-direction:column; align-items:center;">
-                  <div id="rainGauge" aria-hidden="true">
+                  <div id="rainGauge" aria-hidden="true" style="position:relative;">
+                    <div id="rainRate" style="position:absolute; right:calc(100% + 4px); top:50%; transform: translateY(-50%) rotate(-90deg); transform-origin: center right; white-space:nowrap; font-size:10px; color:#4fc3f7; font-weight:700; opacity:0.8; visibility:hidden; display:flex; align-items:center; gap:4px;"></div>
                     <div class="overflow-mark">!</div>
                     <div style="position:absolute;left:6px;right:6px;top:6px;bottom:6px;">
+                      <canvas id="rainAnimationCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2;"></canvas>
                       <div id="gaugeFill" style="height:0%"></div>
                       <div id="gaugeTicks" style="position:absolute;top:0;bottom:0;left:0;right:0;pointer-events:none"></div>
                     </div>
@@ -1330,7 +1264,7 @@ function getIconSvg(symbolId, opts = {}) {
   svg.innerHTML = sym.innerHTML;
   const fillColor = opts.fill || svg.getAttribute('data-fill') || '#cfd8dc';
   Array.from(svg.querySelectorAll('path,rect,circle,polygon,ellipse,line')).forEach(n=>{
-    if (!n.getAttribute('fill') && !n.getAttribute('stroke')) n.setAttribute('fill', fillColor);
+    if (!n.getAttribute('fill') && !n.getAttribute('stroke') && !n.getAttribute('mask')) n.setAttribute('fill', fillColor);
   });
   return svg.outerHTML;
 }
@@ -1517,8 +1451,6 @@ function setConditionIcon(code, iconStr) {
 
   // ensure visible defaults
   svg.style.display = svg.style.display || 'block';
-  svg.style.width = svg.style.width || '48px';
-  svg.style.height = svg.style.height || '48px';
   svg.style.opacity = svg.style.opacity || '1';
   if (!svg.getAttribute('role')) svg.setAttribute('role', 'img');
 
@@ -1537,9 +1469,7 @@ function setConditionIcon(code, iconStr) {
     const fillColor = svg.getAttribute('data-fill') || 'var(--text)';
     svg.style.fill = fillColor;
     Array.from(svg.querySelectorAll('path,rect,circle,polygon,ellipse,line')).forEach(n => {
-      if (!n.getAttribute('fill')) n.setAttribute('fill', fillColor);
-      n.removeAttribute('mask');
-      n.removeAttribute('clip-path');
+      if (!n.getAttribute('fill') && !n.getAttribute('mask')) n.setAttribute('fill', fillColor);
     });
 
     svg.setAttribute('aria-label', iconId);
@@ -2169,11 +2099,14 @@ function setCompassDirection(deg, speedMph, gustMph) {
     }
   }
 
-  function updateRainGauge(rainIn){
+  let raindrops = [];
+  let rainAnimationId = null;
+  function updateRainGauge(rainIn, rainMm1h){
     const gauge = document.getElementById('rainGauge');
     const fill = document.getElementById('gaugeFill');
     const amount = document.getElementById('gaugeAmount');
-    if (!fill || !amount || !gauge) return;
+    const rateEl = document.getElementById('rainRate');
+    if (!fill || !amount || !gauge || !rateEl) return;
 
     const numeric = Number(rainIn) || 0;
     const clamped = Math.max(0, Math.min(1, numeric));
@@ -2182,11 +2115,112 @@ function setCompassDirection(deg, speedMph, gustMph) {
     fill.style.height = pct + '%';
     amount.textContent = numeric.toFixed(2) + '"';
 
+    // Update vertical rain rate (inch/hr) with down-arrow
+    const rateInHr = (Number(rainMm1h) || 0) / 25.4;
+    if (rateInHr >= 0.005) {
+      // Arrow points Right naturally, which becomes Down after 90deg rotation
+      rateEl.innerHTML = `<span>${rateInHr.toFixed(2)}"/hr</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>`;
+      rateEl.style.visibility = 'visible';
+    } else {
+      rateEl.style.visibility = 'hidden';
+    }
+
     // Toggle overflow visual state
     if (numeric >= 1.0) {
       gauge.classList.add('is-overflowing');
     } else {
       gauge.classList.remove('is-overflowing');
+    }
+
+    // Update rain animation
+    drawRainAnimation(rainMm1h);
+  }
+
+  function drawRainAnimation(rainMm1h) {
+    const canvas = document.getElementById('rainAnimationCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+
+    const rainRate = Number(rainMm1h) || 0;
+
+    // Determine target number of raindrops and base speed/length based on rain rate
+    let targetRaindrops = 0;
+    let baseSpeed = 0;
+    let baseLength = 0;
+
+    if (rainRate > 0) {
+      if (rainRate < 0.5) { // Drizzle / Very Light
+        targetRaindrops = 2;
+        baseSpeed = 0.5;
+        baseLength = 3;
+      } else if (rainRate < 2.0) { // Light Rain
+        targetRaindrops = 6;
+        baseSpeed = 0.8;
+        baseLength = 4;
+      } else if (rainRate < 7.0) { // Moderate Rain
+        targetRaindrops = 18;
+        baseSpeed = 1.5;
+        baseLength = 7;
+      } else if (rainRate < 15.0) { // Heavy Rain
+        targetRaindrops = 45;
+        baseSpeed = 3.0;
+        baseLength = 12;
+      } else if (rainRate < 30.0) { // Very Heavy / Downpour
+        targetRaindrops = 90;
+        baseSpeed = 5.0;
+        baseLength = 18;
+      } else { // Tropical / Extreme
+        targetRaindrops = 150;
+        baseSpeed = 7.5;
+        baseLength = 24;
+      }
+    }
+
+    // Adjust current raindrops array
+    while (raindrops.length < targetRaindrops) {
+      raindrops.push({
+        x: Math.random() * canvas.width / dpr,
+        y: Math.random() * canvas.height / dpr,
+        length: baseLength + Math.random() * 5,
+        speed: baseSpeed + Math.random() * 2,
+        opacity: 0.3 + Math.random() * 0.4
+      });
+    }
+    while (raindrops.length > targetRaindrops) {
+      raindrops.pop();
+    }
+
+    // Animation loop
+    if (rainAnimationId) cancelAnimationFrame(rainAnimationId);
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      raindrops.forEach(drop => {
+        ctx.beginPath();
+        ctx.moveTo(drop.x, drop.y);
+        ctx.lineTo(drop.x - drop.length * 0.3, drop.y + drop.length); // Slanted rain
+        ctx.strokeStyle = `rgba(79, 195, 247, ${drop.opacity})`; // Blue rain color
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        drop.y += drop.speed;
+        if (drop.y > canvas.height / dpr) {
+          drop.y = -drop.length; // Reset to top
+          drop.x = Math.random() * canvas.width / dpr; // New random x
+        }
+      });
+      if (targetRaindrops > 0) rainAnimationId = requestAnimationFrame(animate);
+    };
+
+    if (targetRaindrops > 0) {
+      rainAnimationId = requestAnimationFrame(animate);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas if no rain
     }
   }
 
@@ -2705,7 +2739,8 @@ updateWindHistoryArc();
       setText('buoySource', ocean.visibility_source || ocean.source || '—');
 
       const rainVal = (data.rain_today_in !== undefined) ? data.rain_today_in : (data.weather?.rain_mm_1h ? (data.weather.rain_mm_1h / 25.4) : 0);
-      updateRainGauge(rainVal || 0);
+      const rainMm1h = data.weather?.rain_mm_1h || 0;
+      updateRainGauge(rainVal || 0, rainMm1h);
 
       // 30-Day Rain Update
       if (historyData && Array.isArray(historyData.precip_last30)) {
@@ -2820,7 +2855,7 @@ updateWindHistoryArc();
     renderGaugeTicks();
     renderCompassTicks();
     renderPressureTicks();
-    updateRainGauge(0);
+    updateRainGauge(0, 0); // Initialize rain gauge and animation
     setCompassDirection(null, null, null);
     fetchKiosk();
     setTimeout(() => { autoAlignTempUnit(); }, 250);
