@@ -585,6 +585,53 @@ html,body{
   letter-spacing: 0.05em;
   margin-top: 0.25rem;
 }
+
+@keyframes nws-pulse {
+  0%, 100% { background-color: #ff0000; box-shadow: 0 0 5px rgba(255, 0, 0, 0.4); }
+  50% { background-color: #ff4d4d; box-shadow: 0 0 15px rgba(255, 77, 77, 0.7); }
+}
+
+.nws-warning {
+  background-color: #ff0000;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 1.3rem;
+  animation: nws-pulse 0.8s infinite ease-in-out;
+  display: inline-block;
+  border: 1px solid #ff6b6b;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+}
+
+.header-ticker-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+  margin-bottom: 3px;
+}
+.alert-ticker-container {
+  flex: 1;
+  margin-left: 40px; /* Generous gap */
+  overflow: hidden;
+  white-space: nowrap;
+  display: none;
+}
+.alert-ticker-text {
+  display: inline-block;
+  padding-left: 100%;
+  animation: ticker-scroll 30s linear infinite;
+  color: var(--danger);
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
 </style>
 
 
@@ -789,7 +836,12 @@ html,body{
 
   <div class="container">
     <div class="card" style="padding:6px 12px">
-      <div class="dashboardHeader" id="dashboardHeader">Orrs Hill Weather Station (KMEHARPS13)</div>
+      <div class="header-ticker-row">
+        <div class="dashboardHeader" id="dashboardHeader" style="margin-bottom:0; flex-shrink:0;">Orrs Hill Weather Station (KMEHARPS13)</div>
+        <div id="alertTickerContainer" class="alert-ticker-container">
+          <div id="alertTickerText" class="alert-ticker-text"></div>
+        </div>
+      </div>
 <div class="topBand">
   <!-- LEFT COLUMN -->
   <div class="leftBandRow">
@@ -2677,6 +2729,20 @@ function renderForecast7(forecast) {
       const feelsF = (w.feels_c !== null && w.feels_c !== undefined) ? cToF(w.feels_c) : (airTempFnum !== null ? airTempFnum : null);
       const feelsEl = document.getElementById("feelsLikeUnder");
 
+      // --- NWS Warning Check ---
+      const allAlerts = data.alerts || [];
+      const tickerContainer = document.getElementById('alertTickerContainer');
+      const tickerText = document.getElementById('alertTickerText');
+      
+      if (allAlerts.length > 0) {
+        tickerText.textContent = '*** NWS ALERT: ' + allAlerts.map(a => a.event).join(' • ') + ' ***';
+        tickerContainer.style.display = 'block';
+      } else {
+        tickerContainer.style.display = 'none';
+      }
+
+      const hasNwsWarning = allAlerts.some(a => a.event.toLowerCase().includes('warning'));
+
       // --- Frost Warning Logic ---
       const nowDt = new Date();
       const m = nowDt.getMonth() + 1;
@@ -2691,7 +2757,9 @@ function renderForecast7(forecast) {
         tLow = tomorrowForecast.min !== null ? tomorrowForecast.min : (tomorrowForecast.min_c !== null ? cToF(tomorrowForecast.min_c) : null);
       }
 
-      if (isFrostSeason && isFrostTime && tLow !== null && tLow <= 36) {
+      if (hasNwsWarning) {
+        feelsEl.innerHTML = '<div class="nws-warning">NWS WARNING!</div>';
+      } else if (isFrostSeason && isFrostTime && tLow !== null && tLow <= 36) {
         feelsEl.innerHTML = '<div class="frost-warning">FROST WARNING!</div>';
       } else {
         if (feelsF !== null) feelsEl.textContent = `Feels like ${feelsF.toFixed(1)}°F`;
@@ -2859,7 +2927,7 @@ updateWindHistoryArc();
         const r30Status = document.getElementById('rain30Status');
         
         if (r30Fill && r30Val) {
-          const pct30 = Math.min(100, (total30 / 7) * 100);
+          const pct30 = Math.min(100, (total30 / 8) * 100);
           r30Fill.style.height = pct30 + '%';
           r30Val.textContent = total30.toFixed(1) + '"';
           
