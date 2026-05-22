@@ -445,13 +445,18 @@ html,body{
   overflow: hidden;
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
 }
-#rain30Fill {
+#rain23Fill, #rain7Fill {
   position: absolute;
-  bottom: 0;
   left: 0;
   right: 0;
-  height: 0%;
-  transition: height 1s ease-out, background-color 0.5s;
+  transition: height 1s ease-out, bottom 1s ease-out;
+}
+#rain23Fill {
+  bottom: 0;
+  background-color: #0288d1; /* Darker blue for older data */
+}
+#rain7Fill {
+  background-color: #4fc3f7; /* Lighter blue for last 7 days */
 }
 .overflow-mark {
   position: absolute;
@@ -659,7 +664,7 @@ html,body{
 </symbol>
 
 <symbol id="icon-clear-night" viewBox="0 0 24 24">
-  <path d="M11 4a8 8 0 1 0 9 9 6 6 0 0 1-9-9z" fill="#b0c4de" stroke="#b0c4de" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" fill="#b0c4de" stroke="#b0c4de" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
 </symbol>
 
 <!-- FEW CLOUDS -->
@@ -669,7 +674,7 @@ html,body{
 </symbol>
 
 <symbol id="icon-few-clouds-night" viewBox="0 0 24 24"> <!-- Night: Large moon, small cloud bottom-right -->
-  <path d="M11 8a6 6 0 1 0 7 7 4.5 4.5 0 0 1-7-7z" fill="#b0c4de" mask="url(#mask-cloud-cutout)"/>
+  <path d="M13 4a4 4 0 0 0 6 6 6 6 0 1 1-6-6Z" fill="#b0c4de" mask="url(#mask-cloud-cutout)"/>
   <path d="M14 18h2a3 3 0 1 0-1-5.8 4 4 0 1 0-7.3 1.8" fill="rgba(207, 216, 220, 0.2)" stroke="#cfd8dc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </symbol>
 
@@ -928,8 +933,9 @@ html,body{
                   <div class="mutedTiny" style="font-size:8px; margin-top:-2px">TODAY</div>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:center;">
-                  <div class="rain30Pillar" id="rain30Pillar" title="Last 30 Days">
-                    <div id="rain30Fill"></div>
+                  <div class="rain30Pillar" id="rain30Pillar" title="Last 30 Days (Light=7d, Dark=23d)">
+                    <div id="rain23Fill"></div>
+                    <div id="rain7Fill"></div>
                   </div>
                   <div id="rain30Val" style="margin-top:4px;font-weight:600;font-size:18px;font-family:system-ui,sans-serif">0.0"</div>
                   <div class="mutedTiny" id="rain30Status" style="font-size:8px; margin-top:-2px">30 DAY</div>
@@ -2942,25 +2948,30 @@ updateWindHistoryArc();
       // 30-Day Rain Update
       if (historyData && Array.isArray(historyData.precip_last30)) {
         const total30 = historyData.precip_last30.reduce((acc, d) => acc + (Number(d.rain_in) || 0), 0);
-        const r30Fill = document.getElementById('rain30Fill');
+        
+        // Calculate split: last 7 days vs remaining 23 days
+        const last7Days = historyData.precip_last30.slice(-7);
+        const total7 = last7Days.reduce((acc, d) => acc + (Number(d.rain_in) || 0), 0);
+        const totalRemaining = Math.max(0, total30 - total7);
+
+        const r23Fill = document.getElementById('rain23Fill');
+        const r7Fill = document.getElementById('rain7Fill');
         const r30Val = document.getElementById('rain30Val');
         const r30Status = document.getElementById('rain30Status');
         
-        if (r30Fill && r30Val) {
-          const pct30 = Math.min(100, (total30 / 8) * 100);
-          r30Fill.style.height = pct30 + '%';
+        if (r23Fill && r7Fill && r30Val) {
+          const pctTotal = Math.min(100, (total30 / 8) * 100);
+          const ratio7 = total30 > 0 ? (total7 / total30) : 0;
+          const pct7Final = pctTotal * ratio7;
+          const pctRemainingFinal = pctTotal - pct7Final;
+
+          r23Fill.style.height = pctRemainingFinal + '%';
+          r7Fill.style.bottom = pctRemainingFinal + '%';
+          r7Fill.style.height = pct7Final + '%';
+
           r30Val.textContent = total30.toFixed(1) + '"';
           
-          let color = '#1fb6b6'; // Default Normal
           let statusTxt = 'NORMAL';
-          
-          if (total30 <= 1) { color = '#a67c52'; statusTxt = 'V. DRY'; }
-          else if (total30 <= 3) { color = '#ffd166'; statusTxt = 'DRY'; }
-          else if (total30 <= 5) { color = '#1fb6b6'; statusTxt = 'NORMAL'; }
-          else if (total30 <= 6) { color = '#39a0ff'; statusTxt = 'WET'; }
-          else { color = '#0288d1'; statusTxt = 'V. WET'; }
-          
-          r30Fill.style.backgroundColor = color;
           if (r30Status) r30Status.textContent = statusTxt;
         }
       }
