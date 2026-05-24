@@ -1788,7 +1788,18 @@ function getMoonKeyword(phaseText) {
   // -------------------------
   // Sparkline (DPR-aware)
   // -------------------------
-  function drawTempSparkline(points, sunriseTs, sunsetTs){
+  function getValAtTs(ts, pts, prop) {
+    if (!pts || !pts.length) return 0;
+    const t0 = pts[0].ts, t1 = pts[pts.length-1].ts;
+    if (ts <= t0) return pts[0][prop] || 0;
+    if (ts >= t1) return pts[pts.length-1][prop] || 0;
+    const idx = ((ts - t0) / (t1 - t0)) * (pts.length - 1);
+    const i = Math.floor(idx), f = idx - i;
+    const valA = pts[i][prop] || 0, valB = pts[i+1][prop] || 0;
+    return valA + f * (valB - valA);
+  }
+
+  function drawTempSparkline(points, sunriseTs, sunsetTs, nowTs){
     const canvas = document.getElementById('tempSpark');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -1881,24 +1892,53 @@ function getMoonKeyword(phaseText) {
     ctx.fillStyle = fillGrad;
     ctx.fill();
 
-    ctx.beginPath();
-    points.forEach((p,i) => {
-      const x = mapX(p.ts), y = mapY(p.f);
-      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-    });
-    ctx.strokeStyle = lineGrad;
+    // Determine interpolated "Now" coordinates for seamless segment joining
+    const nowX = mapX(nowTs);
+    const nowF = getValAtTs(nowTs, points, 'f');
+    const nowY = mapY(nowF);
+
     ctx.lineWidth = Math.max(1, 2 * scale);
+    ctx.strokeStyle = lineGrad;
+
+    // 1. Draw Past (Solid) - extending exactly to "now"
+    ctx.beginPath();
+    let moveDone = false;
+    points.forEach((p) => {
+      if (p.ts <= nowTs) {
+        const x = mapX(p.ts), y = mapY(p.f);
+        if (!moveDone) { ctx.moveTo(x, y); moveDone = true; }
+        else ctx.lineTo(x, y);
+      }
+    });
+    ctx.lineTo(nowX, nowY);
+    ctx.setLineDash([]);
     ctx.stroke();
 
-    // x-axis time markings (exact hour values in 3-hour increments)
+    // 2. Draw Future (Dashed) - starting exactly from "now"
+    ctx.beginPath();
+    ctx.moveTo(nowX, nowY);
+    points.forEach((p) => {
+      if (p.ts > nowTs) {
+        ctx.lineTo(mapX(p.ts), mapY(p.f));
+      }
+    });
+    ctx.setLineDash([4, 4]);
+    ctx.globalAlpha = 0.6;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1.0;
+
+    // x-axis time markings (exact hour values in 4-hour increments)
     const hourMs = 60 * 60 * 1000;
-    const stepMs = 3 * hourMs;
-    const firstHour = Math.ceil(t0 / hourMs) * hourMs;
+    const stepMs = 4 * hourMs;
+    // Shift based on the full 24h window
+    const actualT0 = points[0].ts;
+    const actualT1 = points[points.length-1].ts;
+    const firstHour = Math.ceil(actualT0 / hourMs) * hourMs;
     const firstTick = Math.ceil(firstHour / stepMs) * stepMs;
     const ticks = [];
-    for (let ts = firstTick; ts <= t1; ts += stepMs) {
+    for (let ts = firstTick; ts <= actualT1; ts += stepMs) {
       ticks.push(ts);
-      if (ticks.length >= 5) break;
     }
     ctx.fillStyle = 'rgba(255,255,255,0.82)';
     ctx.font = `${10 * Math.max(1, scale)}px system-ui`;
@@ -1910,11 +1950,41 @@ function getMoonKeyword(phaseText) {
       ctx.fillText(label, x, padY + h - 2);
     });
 
-    const last = points[points.length-1];
-    const nowX = mapX(last.ts);
+    // --- Animated Weather Effects (Precip > 50%) ---
+    if (!window._sparkParticles) window._sparkParticles = [];
+    if (window._sparkParticles.length === 0 || window._sparkLastW !== rect.width) {
+      window._sparkParticles = Array.from({length: 100}, () => ({
+        x: Math.random() * rect.width,
+        y: Math.random() * rect.height,
+        v: 0.5 + Math.random()
+      }));
+      window._sparkLastW = rect.width;
+    }
 
-    ctx.beginPath(); ctx.fillStyle = '#071018'; ctx.strokeStyle = getTempColor(last.f); ctx.lineWidth = Math.max(1, 1.2 * scale);
-    ctx.arc(nowX, mapY(last.f), Math.max(2, 4 * scale), 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    window._sparkParticles.forEach(p => {
+      const pTs = t0 + ((p.x - padX) / w) * (t1 - t0);
+      const pProb = getValAtTs(pTs, points, 'precipProb');
+      const pTemp = getValAtTs(pTs, points, 'f');
+
+      if (pProb > 50) {
+        const isSnow = pTemp <= 32;
+        p.y += isSnow ? p.v * 0.4 : p.v * 1.5;
+        if (isSnow) p.x += Math.sin(p.y / 10) * 0.3;
+        if (p.y > rect.height) p.y = -5;
+        if (p.x > rect.width) p.x = 0; if (p.x < 0) p.x = rect.width;
+
+        ctx.fillStyle = isSnow ? 'rgba(255,255,255,0.8)' : 'rgba(79,195,247,0.7)';
+        if (isSnow) {
+          ctx.beginPath(); ctx.arc(p.x, p.y, 1, 0, Math.PI*2); ctx.fill();
+        } else {
+          ctx.fillRect(p.x, p.y, 1, 3);
+        }
+      }
+    });
+
+    // Dot at current temp (interpolated "now" position)
+    ctx.beginPath(); ctx.fillStyle = '#071018'; ctx.strokeStyle = getTempColor(nowF); ctx.lineWidth = Math.max(1, 1.2 * scale);
+    ctx.arc(nowX, nowY, Math.max(2, 4 * scale), 0, Math.PI*2); ctx.fill(); ctx.stroke();
 
     setText('sparkRange', minF.toFixed(1) + '°F / ' + maxF.toFixed(1) + '°F');
   }
@@ -2396,18 +2466,21 @@ function setCompassDirection(deg, speedMph, gustMph) {
   // -------------------------
   // Resample helper
   // -------------------------
-  function resampleToWindow(samples, windowStart, windowEnd, pointsCount = 13){
+  function resampleToWindow(samples, windowStart, windowEnd, pointsCount = 13, props = ['f']){
     if (!Array.isArray(samples) || !samples.length){
       const now = Date.now();
-      const base = 50;
       const out = [];
-      for (let i = pointsCount - 1; i >= 0; i--) out.push({ ts: now - i * ((windowEnd - windowStart) / (pointsCount - 1)), f: base });
+      for (let i = pointsCount - 1; i >= 0; i--) {
+        let obj = { ts: now - i * ((windowEnd - windowStart) / (pointsCount - 1)) };
+        props.forEach(p => obj[p] = (p === 'f' ? 50 : 0));
+        out.push(obj);
+      }
       return out;
     }
-    const s = samples.slice().sort((a,b)=>a.ts-b.ts).map((p,i,arr)=>({ ts: i>0 && p.ts<=arr[i-1].ts ? arr[i-1].ts+1000 : p.ts, f: p.f }));
-    function interp(t){
-      if (t <= s[0].ts) return s[0].f;
-      if (t >= s[s.length-1].ts) return s[s.length-1].f;
+    const s = samples.slice().sort((a,b)=>a.ts-b.ts);
+    function interp(t, prop){
+      if (t <= s[0].ts) return s[0][prop] || 0;
+      if (t >= s[s.length-1].ts) return s[s.length-1][prop] || 0;
       let lo = 0, hi = s.length - 1;
       while (hi - lo > 1){
         const mid = Math.floor((lo + hi) / 2);
@@ -2415,12 +2488,15 @@ function setCompassDirection(deg, speedMph, gustMph) {
       }
       const a = s[lo], b = s[hi];
       const u = (t - a.ts) / (b.ts - a.ts);
-      return a.f + u * (b.f - a.f);
+      const vA = a[prop] || 0, vB = b[prop] || 0;
+      return vA + u * (vB - vA);
     }
     const out = [];
     for (let i=0;i<pointsCount;i++){
       const t = windowStart + (i / (pointsCount - 1)) * (windowEnd - windowStart);
-      out.push({ ts: Math.round(t), f: interp(t) });
+      let obj = { ts: Math.round(t) };
+      props.forEach(p => obj[p] = interp(t, p));
+      out.push(obj);
     }
     return out;
   }
@@ -3000,54 +3076,41 @@ updateWindHistoryArc();
 
       drawTideChart(samplesArr || [], highs || [], lows || [], tides.sunrise, tides.sunset);
 
-      // Temp sparkline
+      // Temp sparkline (24-hour: 12h past + 12h forecast)
       const nowTs = Date.now();
-      const tryArrays = [
-        // Priority 1: History API temperature data
-        (historyData && Array.isArray(historyData.temp_last12)) ? historyData.temp_last12.map(item => ({ ts: item.t, temp_c: item.c })) : null,
-        // Fallback sources
-        (data.weather && Array.isArray(data.weather.observations)) ? data.weather.observations : null,
-        (data.weather && Array.isArray(data.weather.hourly)) ? data.weather.hourly : null,
-        (data.forecast && Array.isArray(data.forecast.hourly)) ? data.forecast.hourly : null,
-        (data.station && Array.isArray(data.station.history)) ? data.station.history : null
-      ];
-      function normalizeTs(v){ const n = safeNum(v); if (n === null) return null; return n < 1e12 ? n * 1000 : n; }
-      let chosenSamples = [];
-      for (const arr of tryArrays){
-        if (!arr || !arr.length) continue;
-        const s = [];
-        for (let i=0;i<arr.length;i++){
-          const item = arr[i];
-          const ts = normalizeTs(item.ts ?? item.time ?? item.timestamp);
-          if (!ts) continue;
-          let f = null;
-          if (safeNum(item.temp_f) !== null) f = safeNum(item.temp_f);
-          else if (safeNum(item.temp_c) !== null) f = safeNum(item.temp_c) * 9/5 + 32;
-          else if (safeNum(item.temp) !== null) f = safeNum(item.temp);
-          if (f === null) continue;
-          s.push({ ts, f: Number(f) });
-        }
-        if (s.length){ chosenSamples = s.sort((a,b)=>a.ts-b.ts); break; }
-      }
-      if (!chosenSamples.length && Array.isArray(data.forecast?.daily) && data.forecast.daily.length){
-        const daily = data.forecast.daily[0];
-        const currentC = (data.weather && safeNum(data.weather.temp_c) !== null) ? safeNum(data.weather.temp_c) : null;
-        const baseC = currentC !== null ? currentC : (safeNum(daily.min_c) !== null && safeNum(daily.max_c) !== null ? (safeNum(daily.min_c) + safeNum(daily.max_c)) / 2 : 10);
-        for (let i=24;i>=0;i--) chosenSamples.push({ ts: nowTs - i*3600*1000, f: baseC * 9/5 + 32 + (Math.random()-0.5)*1.5 });
-      }
-      if (!chosenSamples.length){
-        const curF = (data.weather && safeNum(data.weather.temp_f) !== null) ? safeNum(data.weather.temp_f) : null;
-        const curC = (data.weather && safeNum(data.weather.temp_c) !== null) ? safeNum(data.weather.temp_c) : null;
-        const baseF = curF !== null ? curF : (curC !== null ? curC * 9/5 + 32 : 50);
-        for (let i=24;i>=0;i--) chosenSamples.push({ ts: nowTs - i*3600*1000, f: baseF });
-      }
       const windowStart = nowTs - 12 * 3600 * 1000;
-      const windowEnd = nowTs;
-      const resampled = resampleToWindow(chosenSamples, windowStart, windowEnd, 13);
-      lastSparkPoints = resampled;
+      const windowEnd = nowTs + 12 * 3600 * 1000;
 
-      setTimeout(() => { drawTempSparkline(resampled, lastSunrise, lastSunset); autoAlignTempUnit(); }, 80);
-      console.log('Chosen samples for sparkline:', chosenSamples); // Log chosen samples for debugging
+      let pastSamples = [];
+      const historyArr = (historyData && Array.isArray(historyData.temp_last12)) ? historyData.temp_last12 : [];
+      if (historyArr.length) {
+        pastSamples = historyArr.map(item => ({ ts: toMs(item.t), f: item.c * 9/5 + 32, precipProb: 0 }));
+      } else if (data.station && Array.isArray(data.station.history)) {
+        pastSamples = data.station.history.map(h => ({
+          ts: toMs(h.ts ?? h.time ?? h.timestamp),
+          f: h.temp_f ?? (h.temp_c * 9/5 + 32)
+        })).filter(s => s.ts && s.f != null);
+      }
+
+      let futureSamples = [];
+      const hourlyArr = (data.forecast && Array.isArray(data.forecast.hourly)) ? data.forecast.hourly : [];
+      if (hourlyArr.length) {
+        futureSamples = hourlyArr.map(p => ({ ts: toMs(p.ts), f: Number(p.f), precipProb: p.precipProb || 0 }));
+      }
+
+      let combined = [
+        ...pastSamples.filter(s => s.ts >= windowStart && s.ts <= nowTs),
+        ...futureSamples.filter(s => s.ts > nowTs && s.ts <= windowEnd)
+      ].sort((a,b) => a.ts - b.ts).map(s => ({ ...s, precipProb: s.precipProb || 0 }));
+
+      if (!combined.length){
+        const curF = airTempFnum || 50;
+        for (let i=-12;i<=12;i++) combined.push({ ts: nowTs + i*3600*1000, f: curF, precipProb: 0 });
+      }
+
+      const resampled = resampleToWindow(combined, windowStart, windowEnd, 25, ['f', 'precipProb']);
+      lastSparkPoints = resampled;
+      autoAlignTempUnit();
 
       await updateRightSide(data, historyData);
 
@@ -3068,8 +3131,16 @@ updateWindHistoryArc();
     fetchKiosk();
     setTimeout(() => { autoAlignTempUnit(); }, 250);
     setInterval(fetchKiosk, 5 * 60 * 1000);
+
+    function sparkLoop() {
+      if (lastSparkPoints && lastSparkPoints.length) {
+        drawTempSparkline(lastSparkPoints, lastSunrise, lastSunset, Date.now());
+      }
+      requestAnimationFrame(sparkLoop);
+    }
+    requestAnimationFrame(sparkLoop);
   });
-  window.addEventListener('resize', () => { drawTempSparkline(lastSparkPoints, lastSunrise, lastSunset); autoAlignTempUnit(); });
+  window.addEventListener('resize', () => { autoAlignTempUnit(); });
 
   </script>
 </body>
