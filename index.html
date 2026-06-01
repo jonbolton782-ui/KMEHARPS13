@@ -136,6 +136,16 @@ html,body{
 .sunCard .cardLabel {
   margin-top: 0;
 }
+/* New Sun Path Styles */
+.sunPathContainer {
+  width: 90px;
+  height: 90px;
+  position: relative;
+}
+.sunPathSvg {
+  width: 100%;
+  height: 100%;
+}
 
 .moonCard .cardLabel {
   margin-top: -10px;
@@ -1001,8 +1011,8 @@ html,body{
 
     <!-- Sunrise/Sunset -->
     <div class="gridCard sunCard">
-      <div class="cardIcon">
-        <div class="sunIcon" id="sunNextIcon"></div>
+      <div class="cardIcon" id="sunPathContainer">
+        <!-- Circular Sun Path SVG will be injected here -->
       </div>
       <div class="cardLabel" id="sunNextTime">—</div>
     </div>
@@ -1245,6 +1255,85 @@ function getSpecialDayIcon() {
   if (m === 12 && (d >= 20 && d <= 22)) return winterSolsticeSvg;
 
   return null;
+}
+
+/**
+ * Renders the circular sun path loop and travelling sun.
+ */
+function drawSunPath(sunrise, sunset, now) {
+  const container = document.getElementById('sunPathContainer');
+  if (!container || !sunrise || !sunset) return;
+
+  const cx = 50, cy = 50, r = 40;
+  const nowMs = now.getTime();
+  const riseMs = sunrise.getTime();
+  const setMs = sunset.getTime();
+  const noonMs = (riseMs + setMs) / 2;
+
+  // Convert a date to minutes since midnight for angle calculation
+  const getMin = (d) => d.getHours() * 60 + d.getMinutes();
+  const nowMin = getMin(now);
+  const riseMin = getMin(sunrise);
+  const setMin = getMin(sunset);
+
+  // Angle calculation: 00:00 is at the bottom (180deg), 12:00 is at the top (0deg/360deg)
+  const getAngle = (min) => (min * 0.25 + 180) % 360;
+
+  const startAngle = getAngle(riseMin);
+  const endAngle = getAngle(setMin);
+  const currentAngle = getAngle(nowMin);
+
+  // Determine sun color
+  let sunColor = 'rgba(255,255,255,0.15)'; // Default night
+  if (nowMs >= riseMs && nowMs <= setMs) {
+    const minToRise = Math.abs(nowMs - riseMs) / 60000;
+    const minToSet = Math.abs(nowMs - setMs) / 60000;
+    const minToNoon = Math.abs(nowMs - noonMs) / 60000;
+
+    if (minToRise < 45 || minToSet < 45) sunColor = '#ff8c42'; // Orange near horizons
+    else if (minToNoon < 60) sunColor = '#ffffff'; // White near midday
+    else sunColor = '#ffd166'; // Yellow elsewhere
+  }
+
+  // Generate arcs
+  // Day Arc (Sunrise to Sunset)
+  const dayArc = describeArc(cx, cy, r, startAngle, endAngle);
+  // Night Arc (Sunset to Sunrise - completes the circle)
+  const nightArc = describeArc(cx, cy, r, endAngle, startAngle);
+
+  const sunPos = polarToCartesian(cx, cy, r, currentAngle);
+
+  container.innerHTML = `
+    <svg viewBox="0 0 100 100" class="sunPathSvg">
+      <!-- Night Path -->
+      <path d="${nightArc}" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3" stroke-linecap="round" />
+      <!-- Day Path -->
+      <path d="${dayArc}" fill="none" stroke="#4fc3f7" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      
+      <!-- Horizon Markers -->
+      <circle cx="${polarToCartesian(cx,cy,r,startAngle).x}" cy="${polarToCartesian(cx,cy,r,startAngle).y}" r="1.5" fill="white" opacity="0.5" />
+      <circle cx="${polarToCartesian(cx,cy,r,endAngle).x}" cy="${polarToCartesian(cx,cy,r,endAngle).y}" r="1.5" fill="white" opacity="0.5" />
+
+      <!-- The Sun -->
+      <circle cx="${sunPos.x}" cy="${sunPos.y}" r="5" fill="${sunColor}">
+        ${nowMs >= riseMs && nowMs <= setMs ? `<filter id="sunGlow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>` : ''}
+      </circle>
+    </svg>
+  `;
+}
+
+/**
+ * SVG path helper for arcs
+ */
+function describeArc(x, y, radius, startAngle, endAngle) {
+  const start = polarToCartesian(x, y, radius, endAngle);
+  const end = polarToCartesian(x, y, radius, startAngle);
+  const arcSweep = (endAngle < startAngle ? endAngle + 360 : endAngle) - startAngle <= 180 ? "0" : "1";
+  const d = [
+    "M", start.x, start.y, 
+    "A", radius, radius, 0, arcSweep, 0, end.x, end.y
+  ].join(" ");
+  return d;
 }
 
 
@@ -2621,12 +2710,7 @@ async function updateRightSide(data, historyData = null){
       nextLabel = 'Sunrise';
       nextIcon = '🌅';
     }
-
-    const specialDayIcon = getSpecialDayIcon();
-document.getElementById('sunNextIcon').innerHTML =
-  specialDayIcon ? specialDayIcon : (nextLabel === 'Sunrise' ? sunriseSvg : sunsetSvg);
-
-
+    drawSunPath(sunrise, sunset, now);
 
     document.getElementById('sunNextTime').textContent =
       nextEvent.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
