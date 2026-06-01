@@ -3057,7 +3057,7 @@ updateWindHistoryArc();
         const r30Status = document.getElementById('rain30Status');
         
         if (r23Fill && r7Fill && r30Val) {
-          const pctTotal = Math.min(100, (total30 / 8) * 100);
+          const pctTotal = Math.min(100, (total30 / 10) * 100);
           const ratio7 = total30 > 0 ? (total7 / total30) : 0;
           const pct7Final = pctTotal * ratio7;
           const pctRemainingFinal = pctTotal - pct7Final;
