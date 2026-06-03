@@ -135,6 +135,7 @@ html,body{
 
 .sunCard .cardLabel {
   margin-top: 0;
+  font-size: 0.95rem;
 }
 /* New Sun Path Styles */
 .sunPathContainer {
@@ -880,7 +881,6 @@ html,body{
   <!-- LEFT COLUMN -->
   <div class="leftBandRow">
     <div class="leftContentWrap">
-
       <!-- Top row limiter wraps the entire topRowItems block -->
       <div class="topRowLimiter">
         <div class="topRowItems" role="group" aria-label="Current conditions row">
@@ -981,7 +981,6 @@ html,body{
   <!-- Sparkline sits directly under the top row and will match its width -->
   <div class="sparkFull" aria-hidden="false">
     <div class="sparkWrap" role="img" aria-label="Temperature sparkline">
-      <div class="mutedTiny" id="sparkRange" style="position:absolute;top:4px;left:8px;z-index:10;pointer-events:none">— / —</div>
       <canvas id="tempSpark"></canvas>
     </div>
   </div> <!-- /.sparkFull -->
@@ -1264,7 +1263,7 @@ function drawSunPath(sunrise, sunset, now) {
   const container = document.getElementById('sunPathContainer');
   if (!container || !sunrise || !sunset) return;
 
-  const cx = 50, cy = 50, r = 40;
+  const cx = 50, cy = 50, r = 48;
   const nowMs = now.getTime();
   const riseMs = sunrise.getTime();
   const setMs = sunset.getTime();
@@ -1295,6 +1294,24 @@ function drawSunPath(sunrise, sunset, now) {
     else sunColor = '#ffd166'; // Yellow elsewhere
   }
 
+  // Calculate daylight duration (#h#m)
+  const dayMs = setMs - riseMs;
+  const hours = Math.floor(dayMs / 3600000);
+  const mins = Math.floor((dayMs % 3600000) / 60000);
+  const durationStr = `${hours}h${mins}m`;
+
+  // Determine text style based on time of day
+  let textStyle = `fill: rgba(255,255,255,0.4);`; // Brighter for better night legibility
+  if (nowMs >= riseMs && nowMs <= setMs) {
+    const minToRise = Math.abs(nowMs - riseMs) / 60000;
+    const minToSet = Math.abs(nowMs - setMs) / 60000;
+    if (minToRise < 45 || minToSet < 45) {
+      textStyle = `fill: #ff8c42; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.8));`; // Pop orange against dark
+    } else {
+      textStyle = `fill: #ffffff; filter: drop-shadow(0 0 5px rgba(255,255,255,0.4)) drop-shadow(0 1px 2px rgba(0,0,0,0.9));`; // Lit up + readable
+    }
+  }
+
   // Generate arcs
   // Day Arc (Sunrise to Sunset)
   const dayArc = describeArc(cx, cy, r, startAngle, endAngle);
@@ -1313,6 +1330,11 @@ function drawSunPath(sunrise, sunset, now) {
       <!-- Horizon Markers -->
       <circle cx="${polarToCartesian(cx,cy,r,startAngle).x}" cy="${polarToCartesian(cx,cy,r,startAngle).y}" r="1.5" fill="white" opacity="0.5" />
       <circle cx="${polarToCartesian(cx,cy,r,endAngle).x}" cy="${polarToCartesian(cx,cy,r,endAngle).y}" r="1.5" fill="white" opacity="0.5" />
+
+      <!-- Daylight Duration Text -->
+      <text x="50" y="57" text-anchor="middle" font-size="17" font-weight="bold" font-family="system-ui" style="${textStyle}">
+        ${durationStr}
+      </text>
 
       <!-- The Sun -->
       <circle cx="${sunPos.x}" cy="${sunPos.y}" r="5" fill="${sunColor}">
@@ -1922,7 +1944,6 @@ function getMoonKeyword(phaseText) {
       ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#9fb6c2';
       ctx.font = '12px system-ui';
       ctx.fillText('No recent temps', 8, rect.height/2 + 4);
-      setText('sparkRange','— / —');
       return;
     }
 
@@ -1940,7 +1961,7 @@ function getMoonKeyword(phaseText) {
     const scaledMin = midpoint - scaledRange / 2;
     const scaledMax = midpoint + scaledRange / 2;
     
-    const padX = 6, padY = 6;
+    const padX = 12, padY = 10;
     const w = rect.width - padX*2;
     const h = rect.height - padY*2;
     const t0 = points[0].ts, t1 = points[points.length-1].ts;
@@ -2094,7 +2115,25 @@ function getMoonKeyword(phaseText) {
     ctx.beginPath(); ctx.fillStyle = '#071018'; ctx.strokeStyle = getTempColor(nowF); ctx.lineWidth = Math.max(1, 1.2 * scale);
     ctx.arc(nowX, nowY, Math.max(2, 4 * scale), 0, Math.PI*2); ctx.fill(); ctx.stroke();
 
-    setText('sparkRange', minF.toFixed(1) + '°F / ' + maxF.toFixed(1) + '°F');
+    // --- High / Low Labels ---
+    const minPt = points.find(p => p.f === minF);
+    const maxPt = points.find(p => p.f === maxF);
+    const fontSize = 12 * Math.max(1, scale);
+    ctx.font = `bold ${fontSize}px system-ui`;
+    ctx.textAlign = 'center';
+
+    if (minPt) {
+      ctx.fillStyle = '#39a0ff'; // Blue for Low
+      ctx.textBaseline = 'bottom';
+      const x = mapX(minPt.ts);
+      ctx.fillText(Math.round(minF) + '°', x, mapY(minF) - 4);
+    }
+    if (maxPt) {
+      ctx.fillStyle = '#ff6b6b'; // Red for High
+      ctx.textBaseline = 'top';
+      const x = mapX(maxPt.ts);
+      ctx.fillText(Math.round(maxF) + '°', x, mapY(maxF) + 4);
+    }
   }
 
   // -------------------------
